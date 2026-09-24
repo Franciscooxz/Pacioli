@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NominaIndividual xmlns="dian:gov:co:facturaelectronica:NominaIndividual">
+  <NumeroSecuenciaXML Numero="NE0001" Prefijo="NE" Consecutivo="1"/>
+  <InformacionGeneral CUNE="e0e1e2e3e4e5e6e7e8e9eaebecedeeefe0e1e2e3e4e5e6e7e8e9eaebecedeeefe0e1e2e3e4e5e6e7e8e9eaebecedeeef" FechaGen="2026-01-31" TipoMoneda="COP"/>
+  <Empleador NIT="900123456" DV="7" RazonSocial="Empresa Empleadora SAS"/>
+  <Trabajador TipoDocumento="13" NumeroDocumento="1098765432" PrimerNombre="Juan" PrimerApellido="Perez"/>
+  <DevengadosTotal>3000000.00</DevengadosTotal>
+  <DeduccionesTotal>240000.00</DeduccionesTotal>
+  <ComprobanteTotal>2760000.00</ComprobanteTotal>
+</NominaIndividual>

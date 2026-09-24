@@ -1,0 +1,2 @@
+# Aqui se monta l10n_co (OCA) y otros addons externos de Odoo.
+# Clonar el modulo colombiano OCA en este directorio antes de instalarlo en Odoo.

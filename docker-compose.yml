@@ -1,0 +1,129 @@
+name: contaflow
+
+services:
+  postgres:                     # NUESTRA base, separada de la de Odoo
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - contaflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - contaflow_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # consola web
+    volumes:
+      - contaflow_miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    command: uvicorn contaflow.api.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src            # hot reload
+      - ./tests:/app/tests        # para correr pytest dentro del contenedor
+      - ./alembic:/app/alembic    # migraciones
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      minio:    { condition: service_healthy }
+
+  worker:
+    build: .
+    command: celery -A contaflow.workers.celery_app worker --loglevel=info
+    env_file: .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      minio:    { condition: service_healthy }
+
+  beat:                           # Celery Beat: dispara las tareas periodicas (poll IMAP)
+    build: .
+    command: celery -A contaflow.workers.celery_app beat --loglevel=info
+    env_file: .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      redis: { condition: service_healthy }
+
+  odoo-db:                        # base EXCLUSIVA de Odoo (Decision B: sin puerto al host)
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: ${ODOO_DB_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - odoo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:                            # Frontend Next.js (terminal financiero)
+    build: ./frontend
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules          # preserva node_modules del contenedor
+    depends_on:
+      - api
+
+  odoo:
+    image: odoo:17
+    environment:
+      HOST: odoo-db
+      USER: odoo
+      PASSWORD: ${ODOO_DB_PASSWORD}
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./odoo/addons:/mnt/extra-addons   # aqui montaremos l10n_co (OCA)
+    depends_on:
+      odoo-db: { condition: service_healthy }
+
+volumes:
+  contaflow_pgdata:
+  contaflow_redisdata:
+  contaflow_miniodata:
+  odoo_pgdata:
+  odoo_data:

@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.local
+uv.lock
+*.egg-info/
+dist/
+build/
+
+# Node / Next (por si acaso, ademas del frontend/.gitignore)
+node_modules/
+.next/
+out/
+*.log
+
+# SO
+.DS_Store
+Thumbs.db
