@@ -15,7 +15,7 @@ import { clearToken } from "@/lib/api";
 // `ready: false` = pantalla aun no construida (se habilita en el siguiente incremento).
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, ready: true },
-  { href: "/documents", label: "Documentos", icon: FileText, ready: false },
+  { href: "/documents", label: "Documentos", icon: FileText, ready: true },
   { href: "/rules", label: "Reglas", icon: ScrollText, ready: false },
   { href: "/companies", label: "Empresas", icon: Building2, ready: false },
   { href: "/failures", label: "Fallidos", icon: AlertTriangle, ready: false },

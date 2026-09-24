@@ -64,8 +64,10 @@ Reemplaza el "terminal financiero" anterior.
 - [x] Incremento 1 — Shell + Login + Dashboard: layout con sidebar+topbar (guard de
       token), login DashStack, dashboard con stat cards + gráfico de área (SVG) + tabla
       de recientes. `next build` OK y verificado en vivo con el usuario demo.
-- [ ] Incremento 2 — /documents: revisión (tabla + detalle del asiento + aprobar /
-      rechazar / contabilizar). Reemplaza la consola terminal.
+- [x] Incremento 2 — /documents: revisión (tabla con filtros En revisión/Clasificados/
+      Todos + búsqueda; panel lateral con datos, asiento propuesto y acciones aprobar /
+      rechazar / contabilizar). Reemplaza la consola terminal. Typecheck OK y verificado
+      en vivo (drawer con asiento correcto, acciones con enable/disable por estado).
 - [ ] Incremento 3 — /rules, /companies, /failures (dead-letter).
 - [ ] Menú móvil (el sidebar hoy se oculta bajo `md`).
 
