@@ -1,4 +1,12 @@
-import type { DocStatus, DocumentDetail, DocumentSummary, Me } from "./types";
+import type {
+  Company,
+  DocStatus,
+  DocumentDetail,
+  DocumentSummary,
+  IngestionFailure,
+  Me,
+  Rule,
+} from "./types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "contaflow_token";
@@ -97,4 +105,42 @@ export function rejectDocument(id: string, reason?: string): Promise<DocumentSum
 
 export function postDocument(id: string): Promise<void> {
   return authed<void>(`/documents/${id}/post`, { method: "POST" });
+}
+
+export function listCompanies(): Promise<Company[]> {
+  return authed<Company[]>("/companies");
+}
+
+export function listRules(companyId?: string): Promise<Rule[]> {
+  const q = companyId ? `?company_id=${companyId}` : "";
+  return authed<Rule[]>(`/rules${q}`);
+}
+
+export interface RuleInput {
+  company_id: string;
+  account_code: string;
+  issuer_nit?: string | null;
+  match_pattern?: string | null;
+  priority?: number;
+  confidence?: string;
+}
+
+export function createRule(body: RuleInput): Promise<Rule> {
+  return authed<Rule>("/rules", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function updateRule(
+  id: string,
+  body: Partial<{ active: boolean; account_code: string; priority: number }>,
+): Promise<Rule> {
+  return authed<Rule>(`/rules/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export function listFailures(resolved?: boolean): Promise<IngestionFailure[]> {
+  const q = resolved === undefined ? "" : `?resolved=${resolved}`;
+  return authed<IngestionFailure[]>(`/failures${q}`);
+}
+
+export function resolveFailure(id: string): Promise<IngestionFailure> {
+  return authed<IngestionFailure>(`/failures/${id}/resolve`, { method: "POST" });
 }

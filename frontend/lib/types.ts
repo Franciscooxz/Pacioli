@@ -58,3 +58,37 @@ export interface DocumentDetail extends DocumentSummary {
   lines: LineOut[];
   taxes: TaxOut[];
 }
+
+export interface Company {
+  id: string;
+  name: string;
+  nit: string;
+  active: boolean;
+  has_odoo: boolean;
+  has_imap: boolean;
+}
+
+export interface Rule {
+  id: string;
+  company_id: string;
+  account_code: string;
+  issuer_nit: string | null;
+  match_pattern: string | null;
+  cost_center: string | null;
+  priority: number;
+  confidence: string;
+  active: boolean;
+}
+
+export interface IngestionFailure {
+  id: string;
+  stage: string;
+  company_id: string | null;
+  document_id: string | null;
+  task_name: string | null;
+  source_ref: string | null;
+  reason: string;
+  raw_uri: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}

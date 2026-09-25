@@ -68,7 +68,10 @@ Reemplaza el "terminal financiero" anterior.
       Todos + búsqueda; panel lateral con datos, asiento propuesto y acciones aprobar /
       rechazar / contabilizar). Reemplaza la consola terminal. Typecheck OK y verificado
       en vivo (drawer con asiento correcto, acciones con enable/disable por estado).
-- [ ] Incremento 3 — /rules, /companies, /failures (dead-letter).
+- [x] Incremento 3 — /rules (lista + crear + activar), /companies (solo lectura, sin
+      credenciales) y /failures (dead-letter: listar/filtrar/resolver). Añadió endpoints
+      backend GET /companies y GET+POST /failures (con tests de aislamiento). Verificado:
+      mypy (63), tests nuevos (4), typecheck y en vivo. Sidebar completo.
 - [ ] Menú móvil (el sidebar hoy se oculta bajo `md`).
 
 ## Fase F — Conexion con el mundo real (requiere credenciales / datos)  [ ]
