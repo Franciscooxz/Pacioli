@@ -72,7 +72,23 @@ Reemplaza el "terminal financiero" anterior.
       credenciales) y /failures (dead-letter: listar/filtrar/resolver). Añadió endpoints
       backend GET /companies y GET+POST /failures (con tests de aislamiento). Verificado:
       mypy (63), tests nuevos (4), typecheck y en vivo. Sidebar completo.
+- [x] Trabajo por empresa cliente: selector de empresa en el topbar (persistido, con
+      "Todas las empresas") vía contexto React; Dashboard, Documentos, Reglas y Fallidos
+      se filtran por la empresa activa. Backend: filtro `company_id` en GET /documents y
+      GET /failures (con test). Verificado: mypy, 10 tests, typecheck y en vivo.
 - [ ] Menú móvil (el sidebar hoy se oculta bajo `md`).
+
+## Backlog funcional (para uso real de una firma; discutido 2026-09-24)
+
+Huecos de funcionalidad (no integraciones) para que sirva día a día:
+- [ ] Motor de retenciones del comprador (retefuente/reteICA que NO vienen en el XML).
+- [ ] Reversos/correcciones de asientos contabilizados (modelo ya tiene `reversed_by`).
+- [ ] CRUD de empresas desde la UI (crear/editar + credenciales cifradas) — hoy solo lectura.
+- [ ] Gestión de usuarios/roles/invitaciones (hoy 1 usuario = 1 firma).
+- [ ] Reportería y exportación (libro diario, IVA, retenciones, por empresa/mes; Excel/PDF).
+- [ ] Timeline/auditoría del documento en la UI (los eventos ya se guardan).
+- [ ] Acciones masivas, asignación a revisor y comentarios; notificaciones reales.
+- [ ] Nómina completa (hoy solo parseo ligero).
 
 ## Fase F — Conexion con el mundo real (requiere credenciales / datos)  [ ]
 

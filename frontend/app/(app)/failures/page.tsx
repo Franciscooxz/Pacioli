@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthError, clearToken, listFailures, resolveFailure } from "@/lib/api";
+import { useCompany } from "@/components/CompanyProvider";
 import type { IngestionFailure } from "@/lib/types";
 
 type Filter = "pending" | "all";
@@ -18,6 +19,7 @@ const STAGE_LABEL: Record<string, string> = {
 
 export default function FailuresPage() {
   const router = useRouter();
+  const { companyId } = useCompany();
   const [filter, setFilter] = useState<Filter>("pending");
   const [rows, setRows] = useState<IngestionFailure[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +40,13 @@ export default function FailuresPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setRows(await listFailures(filter === "pending" ? false : undefined));
+      setRows(await listFailures(filter === "pending" ? false : undefined, companyId));
     } catch (e) {
       onAuthError(e);
     } finally {
       setLoading(false);
     }
-  }, [filter, onAuthError]);
+  }, [filter, companyId, onAuthError]);
 
   useEffect(() => {
     void load();

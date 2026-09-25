@@ -76,9 +76,15 @@ export function getMe(): Promise<Me> {
   return authed<Me>("/auth/me");
 }
 
-export function listDocuments(status?: DocStatus): Promise<DocumentSummary[]> {
-  const q = status ? `?status=${status}` : "";
-  return authed<DocumentSummary[]>(`/documents${q}`);
+export function listDocuments(
+  status?: DocStatus,
+  companyId?: string | null,
+): Promise<DocumentSummary[]> {
+  const p = new URLSearchParams();
+  if (status) p.set("status", status);
+  if (companyId) p.set("company_id", companyId);
+  const q = p.toString();
+  return authed<DocumentSummary[]>(`/documents${q ? `?${q}` : ""}`);
 }
 
 export function getDocument(id: string): Promise<DocumentDetail> {
@@ -136,9 +142,15 @@ export function updateRule(
   return authed<Rule>(`/rules/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 }
 
-export function listFailures(resolved?: boolean): Promise<IngestionFailure[]> {
-  const q = resolved === undefined ? "" : `?resolved=${resolved}`;
-  return authed<IngestionFailure[]>(`/failures${q}`);
+export function listFailures(
+  resolved?: boolean,
+  companyId?: string | null,
+): Promise<IngestionFailure[]> {
+  const p = new URLSearchParams();
+  if (resolved !== undefined) p.set("resolved", String(resolved));
+  if (companyId) p.set("company_id", companyId);
+  const q = p.toString();
+  return authed<IngestionFailure[]>(`/failures${q ? `?${q}` : ""}`);
 }
 
 export function resolveFailure(id: string): Promise<IngestionFailure> {

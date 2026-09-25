@@ -8,6 +8,7 @@ import { money, pct } from "@/lib/format";
 import type { DocStatus, DocumentSummary } from "@/lib/types";
 import DocumentDrawer from "@/components/DocumentDrawer";
 import StatusBadge from "@/components/StatusBadge";
+import { useCompany } from "@/components/CompanyProvider";
 
 type Filter = "review" | "classified" | "all";
 
@@ -32,6 +33,7 @@ const DOC_CODE: Record<string, string> = {
 
 export default function DocumentsPage() {
   const router = useRouter();
+  const { companyId } = useCompany();
   const [filter, setFilter] = useState<Filter>("review");
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +55,13 @@ export default function DocumentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setDocs(await listDocuments(FILTER_STATUS[filter]));
+      setDocs(await listDocuments(FILTER_STATUS[filter], companyId));
     } catch (e) {
       onAuthError(e);
     } finally {
       setLoading(false);
     }
-  }, [filter, onAuthError]);
+  }, [filter, companyId, onAuthError]);
 
   useEffect(() => {
     void load();

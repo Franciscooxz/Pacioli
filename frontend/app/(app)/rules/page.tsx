@@ -2,25 +2,19 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AuthError,
-  clearToken,
-  createRule,
-  listCompanies,
-  listRules,
-  updateRule,
-} from "@/lib/api";
-import type { Company, Rule } from "@/lib/types";
+import { AuthError, clearToken, createRule, listRules, updateRule } from "@/lib/api";
+import { useCompany } from "@/components/CompanyProvider";
+import type { Rule } from "@/lib/types";
 
 export default function RulesPage() {
   const router = useRouter();
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const { companies, companyId } = useCompany();
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  const [companyId, setCompanyId] = useState("");
+  const [formCompanyId, setFormCompanyId] = useState("");
   const [issuerNit, setIssuerNit] = useState("");
   const [account, setAccount] = useState("");
   const [priority, setPriority] = useState("100");
@@ -40,41 +34,37 @@ export default function RulesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [cs, rs] = await Promise.all([listCompanies(), listRules()]);
-      setCompanies(cs);
-      setRules(rs);
+      setRules(await listRules(companyId ?? undefined));
     } catch (e) {
       onAuthError(e);
     } finally {
       setLoading(false);
     }
-  }, [onAuthError]);
+  }, [companyId, onAuthError]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  // Empresa por defecto del formulario: la activa, o la primera disponible.
   useEffect(() => {
-    if (companies.length > 0 && !companyId) setCompanyId(companies[0].id);
-  }, [companies, companyId]);
+    if (!formCompanyId) setFormCompanyId(companyId ?? companies[0]?.id ?? "");
+  }, [companyId, companies, formCompanyId]);
 
-  const nameById = useMemo(
-    () => new Map(companies.map((c) => [c.id, c.name])),
-    [companies],
-  );
+  const nameById = useMemo(() => new Map(companies.map((c) => [c.id, c.name])), [companies]);
 
   const submit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
       setErr("");
-      if (!companyId || !account.trim()) {
+      if (!formCompanyId || !account.trim()) {
         setErr("Empresa y cuenta contable son obligatorias");
         return;
       }
       setBusy(true);
       try {
         await createRule({
-          company_id: companyId,
+          company_id: formCompanyId,
           account_code: account.trim(),
           issuer_nit: issuerNit.trim() || null,
           priority: Number(priority) || 100,
@@ -88,7 +78,7 @@ export default function RulesPage() {
         setBusy(false);
       }
     },
-    [companyId, account, issuerNit, priority, load, onAuthError],
+    [formCompanyId, account, issuerNit, priority, load, onAuthError],
   );
 
   const toggle = useCallback(
@@ -112,8 +102,8 @@ export default function RulesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Labeled label="Empresa">
             <select
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
+              value={formCompanyId}
+              onChange={(e) => setFormCompanyId(e.target.value)}
               className="h-10 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-primary"
             >
               {companies.length === 0 && <option value="">Sin empresas</option>}

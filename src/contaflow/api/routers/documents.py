@@ -63,12 +63,15 @@ async def list_documents(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
     status_filter: DocumentStatus | None = Query(default=None, alias="status"),
+    company_id: uuid.UUID | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[SourceDocument]:
     query = select(SourceDocument).where(SourceDocument.tenant_id == current_user.tenant_id)
     if status_filter is not None:
         query = query.where(SourceDocument.status == status_filter)
+    if company_id is not None:
+        query = query.where(SourceDocument.company_id == company_id)
     result = await session.scalars(
         query.order_by(SourceDocument.received_at.desc()).limit(limit).offset(offset)
     )

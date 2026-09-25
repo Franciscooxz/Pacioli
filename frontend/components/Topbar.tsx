@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Search } from "lucide-react";
+import { Bell, Building2 } from "lucide-react";
 import { getMe } from "@/lib/api";
 import type { Me } from "@/lib/types";
+import { useCompany } from "@/components/CompanyProvider";
 
 export default function Topbar() {
   const [me, setMe] = useState<Me | null>(null);
+  const { companies, companyId, setCompanyId } = useCompany();
 
   useEffect(() => {
     getMe()
       .then(setMe)
       .catch(() => {
-        /* la pantalla ya se protege por token; ignorar aqui */
+        /* la pantalla ya se protege por token */
       });
   }, []);
 
@@ -21,12 +23,21 @@ export default function Topbar() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-line bg-white px-6">
-      <div className="relative hidden max-w-md flex-1 md:block">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-        <input
-          placeholder="Buscar..."
-          className="h-10 w-full rounded-full border border-line bg-canvas pl-10 pr-4 text-sm outline-none focus:border-primary"
-        />
+      <div className="flex items-center gap-2">
+        <Building2 size={18} className="text-ink-muted" />
+        <select
+          value={companyId ?? ""}
+          onChange={(e) => setCompanyId(e.target.value || null)}
+          aria-label="Empresa activa"
+          className="h-10 max-w-[220px] rounded-lg border border-line bg-canvas px-2 text-sm font-semibold text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todas las empresas</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="ml-auto flex items-center gap-4">

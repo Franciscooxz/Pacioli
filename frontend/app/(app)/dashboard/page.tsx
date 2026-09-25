@@ -7,22 +7,25 @@ import type { DocumentSummary } from "@/lib/types";
 import AreaChart from "@/components/AreaChart";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
+import { useCompany } from "@/components/CompanyProvider";
 
 const fmt = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 });
 const money = (s: string | null) => (s == null ? "—" : `$${fmt.format(Number(s))}`);
 
 export default function DashboardPage() {
+  const { companyId } = useCompany();
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listDocuments()
+    setLoading(true);
+    listDocuments(undefined, companyId)
       .then(setDocs)
       .catch(() => {
         /* el layout ya protege por token */
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [companyId]);
 
   const stats = useMemo(() => {
     const by = (s: string) => docs.filter((d) => d.status === s).length;

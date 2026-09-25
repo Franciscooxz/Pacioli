@@ -158,6 +158,28 @@ async def test_rechazar_documento(api_client: httpx.AsyncClient, pg_engine: Engi
     assert resp.json()["status"] == "REJECTED"
 
 
+async def test_documentos_filtrados_por_empresa(
+    api_client: httpx.AsyncClient, pg_engine: Engine
+) -> None:
+    with Session(pg_engine) as session:
+        _, company_a = _seed_user_company(session, "cf@f.co", "Firma CF")
+        # Segunda empresa en el MISMO tenant.
+        company_b = Company(
+            tenant_id=company_a.tenant_id, name="Empresa B", nit=f"800{uuid.uuid4().hex[:9]}"
+        )
+        session.add(company_b)
+        session.commit()
+        _seed_pending_doc(session, company_a)
+        _seed_pending_doc(session, company_b)
+        cid_a = str(company_a.id)
+
+    headers = await _login(api_client, "cf@f.co")
+    todos = (await api_client.get("/documents?status=PENDING_REVIEW", headers=headers)).json()
+    assert len(todos) == 2  # la firma ve ambas empresas
+    solo_a = (await api_client.get(f"/documents?company_id={cid_a}", headers=headers)).json()
+    assert len(solo_a) == 1  # filtrado por empresa
+
+
 async def test_no_puede_tocar_documento_de_otro_tenant(
     api_client: httpx.AsyncClient, pg_engine: Engine
 ) -> None:

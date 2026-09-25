@@ -23,12 +23,15 @@ async def list_failures(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_async_session),
     resolved: bool | None = Query(default=None),
+    company_id: uuid.UUID | None = Query(default=None),
 ) -> list[IngestionFailure]:
     query = select(IngestionFailure).where(IngestionFailure.tenant_id == current_user.tenant_id)
     if resolved is True:
         query = query.where(IngestionFailure.resolved_at.is_not(None))
     elif resolved is False:
         query = query.where(IngestionFailure.resolved_at.is_(None))
+    if company_id is not None:
+        query = query.where(IngestionFailure.company_id == company_id)
     result = await session.scalars(query.order_by(IngestionFailure.created_at.desc()))
     return list(result)
 
