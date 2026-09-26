@@ -68,6 +68,37 @@ export interface Company {
   has_imap: boolean;
 }
 
+export interface CompanyDetail {
+  id: string;
+  name: string;
+  nit: string;
+  active: boolean;
+  odoo_url: string | null;
+  odoo_db: string | null;
+  odoo_username: string | null;
+  imap_host: string | null;
+  imap_port: number | null;
+  imap_username: string | null;
+  posting_config: Record<string, unknown> | null;
+  has_odoo_password: boolean;
+  has_imap_password: boolean;
+}
+
+export interface CompanyInput {
+  name: string;
+  nit: string;
+  active?: boolean;
+  odoo_url?: string | null;
+  odoo_db?: string | null;
+  odoo_username?: string | null;
+  odoo_password?: string | null;
+  imap_host?: string | null;
+  imap_port?: number | null;
+  imap_username?: string | null;
+  imap_password?: string | null;
+  posting_config?: Record<string, string> | null;
+}
+
 export interface Rule {
   id: string;
   company_id: string;

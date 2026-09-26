@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthError, clearToken, listCompanies } from "@/lib/api";
-import type { Company } from "@/lib/types";
+import { Plus } from "lucide-react";
+import { AuthError, clearToken } from "@/lib/api";
+import { useCompany } from "@/components/CompanyProvider";
+import CompanyDrawer from "@/components/CompanyDrawer";
 
 function Pill({ on, onText, offText }: { on: boolean; onText: string; offText: string }) {
   return (
@@ -19,24 +21,34 @@ function Pill({ on, onText, offText }: { on: boolean; onText: string; offText: s
 
 export default function CompaniesPage() {
   const router = useRouter();
-  const [rows, setRows] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { companies, loading, refresh } = useCompany();
+  // undefined = cerrado · null = crear · string = editar
+  const [openId, setOpenId] = useState<string | null | undefined>(undefined);
 
-  useEffect(() => {
-    listCompanies()
-      .then(setRows)
-      .catch((e) => {
-        if (e instanceof AuthError) {
-          clearToken();
-          router.replace("/login");
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [router]);
+  const onAuthError = useCallback(
+    (e: unknown) => {
+      if (e instanceof AuthError) {
+        clearToken();
+        router.replace("/login");
+        return true;
+      }
+      return false;
+    },
+    [router],
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <h1 className="text-2xl font-extrabold text-ink">Empresas</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-ink">Empresas</h1>
+        <button
+          type="button"
+          onClick={() => setOpenId(null)}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-hover"
+        >
+          <Plus size={18} /> Nueva empresa
+        </button>
+      </div>
 
       <div className="rounded-card bg-white p-2 shadow-card">
         <div className="overflow-x-auto">
@@ -51,8 +63,12 @@ export default function CompaniesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((c) => (
-                <tr key={c.id} className="border-b border-line/50 last:border-0">
+              {companies.map((c) => (
+                <tr
+                  key={c.id}
+                  onClick={() => setOpenId(c.id)}
+                  className="cursor-pointer border-b border-line/50 last:border-0 hover:bg-primary/5"
+                >
                   <td className="px-4 py-3 font-semibold text-ink">{c.name}</td>
                   <td className="px-4 py-3 text-ink-muted">{c.nit}</td>
                   <td className="px-4 py-3">
@@ -66,10 +82,10 @@ export default function CompaniesPage() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {companies.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-ink-muted">
-                    {loading ? "Cargando…" : "Sin empresas"}
+                    {loading ? "Cargando…" : "Sin empresas — crea la primera"}
                   </td>
                 </tr>
               )}
@@ -77,6 +93,15 @@ export default function CompaniesPage() {
           </table>
         </div>
       </div>
+
+      {openId !== undefined && (
+        <CompanyDrawer
+          id={openId}
+          onClose={() => setOpenId(undefined)}
+          onSaved={refresh}
+          onAuthError={onAuthError}
+        />
+      )}
     </div>
   );
 }

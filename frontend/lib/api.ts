@@ -1,5 +1,7 @@
 import type {
   Company,
+  CompanyDetail,
+  CompanyInput,
   DocStatus,
   DocumentDetail,
   DocumentSummary,
@@ -115,6 +117,18 @@ export function postDocument(id: string): Promise<void> {
 
 export function listCompanies(): Promise<Company[]> {
   return authed<Company[]>("/companies");
+}
+
+export function getCompany(id: string): Promise<CompanyDetail> {
+  return authed<CompanyDetail>(`/companies/${id}`);
+}
+
+export function createCompany(body: CompanyInput): Promise<Company> {
+  return authed<Company>("/companies", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function updateCompany(id: string, body: Partial<CompanyInput>): Promise<Company> {
+  return authed<Company>(`/companies/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 }
 
 export function listRules(companyId?: string): Promise<Rule[]> {

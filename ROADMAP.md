@@ -83,7 +83,10 @@ Reemplaza el "terminal financiero" anterior.
 Huecos de funcionalidad (no integraciones) para que sirva día a día:
 - [ ] Motor de retenciones del comprador (retefuente/reteICA que NO vienen en el XML).
 - [ ] Reversos/correcciones de asientos contabilizados (modelo ya tiene `reversed_by`).
-- [ ] CRUD de empresas desde la UI (crear/editar + credenciales cifradas) — hoy solo lectura.
+- [x] CRUD de empresas desde la UI (crear/editar + credenciales Odoo/IMAP cifradas +
+      cuentas de posting). Backend: GET /companies/{id}, POST y PATCH (nunca devuelven
+      contraseñas). Verificado: mypy, 6 tests, y en vivo (crear con credenciales). ESTO
+      HABILITA cargar los accesos reales para el punta a punta (Odoo/IMAP).
 - [ ] Gestión de usuarios/roles/invitaciones (hoy 1 usuario = 1 firma).
 - [ ] Reportería y exportación (libro diario, IVA, retenciones, por empresa/mes; Excel/PDF).
 - [ ] Timeline/auditoría del documento en la UI (los eventos ya se guardan).

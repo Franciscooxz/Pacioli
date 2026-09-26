@@ -17,6 +17,7 @@ interface CompanyCtx {
   companies: Company[];
   companyId: string | null; // null = todas las empresas
   setCompanyId: (id: string | null) => void;
+  refresh: () => Promise<void>;
   loading: boolean;
 }
 
@@ -52,9 +53,17 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refresh = useCallback(async () => {
+    try {
+      setCompanies(await listCompanies());
+    } catch {
+      /* la pantalla ya se protege por token */
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ companies, companyId, setCompanyId, loading }),
-    [companies, companyId, setCompanyId, loading],
+    () => ({ companies, companyId, setCompanyId, refresh, loading }),
+    [companies, companyId, setCompanyId, refresh, loading],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

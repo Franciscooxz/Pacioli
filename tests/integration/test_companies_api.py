@@ -65,3 +65,72 @@ async def test_companies_aisladas_por_tenant(
     headers_b = await _login(api_client, "cob@f.co")
     data = (await api_client.get("/companies", headers=headers_b)).json()
     assert len(data) == 1  # cada firma ve solo su empresa
+
+
+async def test_crear_y_ver_detalle_sin_password(
+    api_client: httpx.AsyncClient, pg_engine: Engine
+) -> None:
+    with Session(pg_engine) as session:
+        _seed_user_company(session, "cc@f.co", "Firma CC")
+
+    headers = await _login(api_client, "cc@f.co")
+    resp = await api_client.post(
+        "/companies",
+        headers=headers,
+        json={
+            "name": "Nueva Empresa",
+            "nit": "901111111",
+            "odoo_url": "https://odoo.test",
+            "odoo_username": "u",
+            "odoo_password": "secret",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["has_odoo"] is True
+    cid = body["id"]
+
+    detail = (await api_client.get(f"/companies/{cid}", headers=headers)).json()
+    assert detail["odoo_username"] == "u"
+    assert detail["has_odoo_password"] is True
+    # La contrasena NUNCA se devuelve, ni en el detalle.
+    assert "odoo_password" not in detail
+    assert "imap_password" not in detail
+
+
+async def test_editar_empresa(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        company = _seed_user_company(session, "ce@f.co", "Firma CE")
+        cid = str(company.id)
+
+    headers = await _login(api_client, "ce@f.co")
+    resp = await api_client.patch(
+        f"/companies/{cid}", headers=headers, json={"name": "Renombrada", "active": False}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Renombrada"
+    assert resp.json()["active"] is False
+
+
+async def test_nit_duplicado_da_409(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        _seed_user_company(session, "cd@f.co", "Firma CD")
+
+    headers = await _login(api_client, "cd@f.co")
+    payload = {"name": "A", "nit": "902222222"}
+    assert (await api_client.post("/companies", headers=headers, json=payload)).status_code == 201
+    assert (await api_client.post("/companies", headers=headers, json=payload)).status_code == 409
+
+
+async def test_no_edita_empresa_de_otro_tenant(
+    api_client: httpx.AsyncClient, pg_engine: Engine
+) -> None:
+    with Session(pg_engine) as session:
+        company_a = _seed_user_company(session, "ia@f.co", "Firma IA")
+        _seed_user_company(session, "ib@f.co", "Firma IB")
+        cid_a = str(company_a.id)
+
+    headers_b = await _login(api_client, "ib@f.co")
+    assert (await api_client.get(f"/companies/{cid_a}", headers=headers_b)).status_code == 404
+    patch = await api_client.patch(f"/companies/{cid_a}", headers=headers_b, json={"name": "x"})
+    assert patch.status_code == 404
