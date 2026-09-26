@@ -45,16 +45,17 @@ Cubre el pendiente "Cola de fallidos / dead-letter" de `PENDIENTES.md`.
       `TrmProvider` inyectable para cuando el XML no la trae; la fuente oficial va en F.
 - [x] Verificado: ruff + mypy strict + pytest (98 tests) + migraciones aplican limpio.
 
-## Fase D — Firma digital XAdES-EPES  [~]
+## Fase D — Firma digital XAdES-EPES  [x] (código; la confianza de CA es Fase F)
 
 Cubre el pendiente de firma de `PENDIENTES.md`.
 
 - [x] D1 — Modulo `ingestion/signature.py` con `verify_xades(xml_bytes) -> SignatureResult`
       (via `signxml`): verifica integridad + que la firma coincide con el certificado
-      incrustado, y extrae el firmante y su vigencia. Probado con certificados autofirmados
-      (firma valida, manipulada -> invalida, sin firma). Verificado: mypy, ruff, 3 tests.
-- [ ] D2 — Integracion al pipeline: guardar el resultado como evento y enrutar a revision
-      las firmas invalidas.
+      incrustado, y extrae el firmante y su vigencia. Probado con certificados autofirmados.
+- [x] D2 — Integracion: el parseo guarda `source_document.signature_valid` (migración) y el
+      resultado en el evento PARSED; `classify_document` enruta a revision las firmas
+      invalidas (reason `firma_invalida`), sin importar las reglas. Verificado: mypy, ruff,
+      tests (3 unit de firma + routing en clasificación + ingesta no rompe).
 - [ ] Pendiente para Fase F: validar la cadena a CA raiz ACREDITADAS (ONAC), el sello de
       tiempo y la politica EPES (`trusted` hoy siempre False), y probar contra XML DIAN real.
 

@@ -128,6 +128,38 @@ def test_sin_regla_va_a_revision(pg_engine: Engine) -> None:
         assert doc.proposed_account_code is None
 
 
+def test_firma_invalida_va_a_revision(pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        company = _seed_company(session)
+        # Regla que normalmente clasificaria con alta confianza...
+        _add_rule(
+            session,
+            company,
+            issuer_nit="900123456",
+            account_code="613505",
+            confidence=Decimal("0.99"),
+        )
+        doc_id = _seed_parsed_doc(session, company, issuer_nit="900123456")
+        # ...pero la firma es invalida: debe forzar revision humana.
+        doc = session.get(SourceDocument, doc_id)
+        assert doc is not None
+        doc.signature_valid = False
+        session.commit()
+
+        status = classify_document(session, doc_id, threshold=Decimal("0.80"))
+        assert status is DocumentStatus.PENDING_REVIEW
+
+        events = set(
+            session.scalars(
+                select(DocumentEvent.event_type).where(DocumentEvent.document_id == doc_id)
+            )
+        )
+        assert DocumentEventType.SENT_TO_REVIEW in events
+        doc = session.get(SourceDocument, doc_id)
+        assert doc is not None
+        assert doc.proposed_account_code is None  # no se auto-propone con firma invalida
+
+
 def test_clasifica_por_patron_y_prioridad(pg_engine: Engine) -> None:
     with Session(pg_engine) as session:
         company = _seed_company(session)

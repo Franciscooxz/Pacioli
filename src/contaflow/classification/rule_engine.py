@@ -87,6 +87,17 @@ def classify_document(
     if company is None:
         raise IngestionError(f"company inexistente para el documento {document_id}")
 
+    # Firma presente pero invalida: a revision humana obligatoria, sin importar las reglas
+    # (CLAUDE.md: si la firma falla, no se descarta en silencio ni se auto-clasifica).
+    if doc.signature_valid is False:
+        doc.status = DocumentStatus.PENDING_REVIEW
+        session.add(
+            _event(company, doc.id, DocumentEventType.SENT_TO_REVIEW, {"reason": "firma_invalida"})
+        )
+        session.commit()
+        logger.info("documento %s -> PENDING_REVIEW (firma invalida)", doc.id)
+        return doc.status
+
     descriptions = session.scalars(
         select(DocumentLine.description).where(DocumentLine.document_id == doc.id)
     )

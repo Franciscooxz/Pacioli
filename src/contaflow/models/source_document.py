@@ -12,6 +12,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -75,6 +76,10 @@ class SourceDocument(UUIDPkMixin, TimestampMixin, Base):
     # TRM (pesos por unidad de moneda extranjera) cuando currency != COP. NULL en COP.
     # Los montos se guardan en la moneda original; la conversion a COP ocurre al contabilizar.
     trm: Mapped[Decimal | None] = mapped_column(Numeric(19, 6), nullable=True)
+
+    # Resultado de validar la firma digital (verify_xades). None = no verificada / sin firma;
+    # False = presente pero invalida (se enruta a revision); True = integra.
+    signature_valid: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     subtotal: Mapped[Decimal | None] = mapped_column(Numeric(19, 2), nullable=True)
     total_tax: Mapped[Decimal | None] = mapped_column(Numeric(19, 2), nullable=True)

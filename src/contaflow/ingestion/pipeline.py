@@ -24,6 +24,7 @@ from contaflow.core.dead_letter import record_failure
 from contaflow.core.exceptions import IngestionError, UblParseError
 from contaflow.core.nit import same_nit
 from contaflow.ingestion.imap_reader import Mailbox, extract_xml_attachments
+from contaflow.ingestion.signature import verify_xades
 from contaflow.ingestion.storage import RawStorage
 from contaflow.ingestion.ubl_parser import parse_ubl
 from contaflow.models.company import Company
@@ -262,15 +263,27 @@ def parse_source_document(
             )
         )
 
+    # Validacion de firma (integridad). present=False -> None (sin firma / no verificada).
+    sig = verify_xades(raw)
+    doc.signature_valid = sig.valid if sig.present else None
+
     warnings = list(parsed.warnings)
     if perspective_warning:
         warnings.append(perspective_warning)
+    if sig.present and not sig.valid:
+        detail = sig.errors[0] if sig.errors else "verificacion fallida"
+        warnings.append(f"Firma digital invalida: {detail}")
     session.add(
         _event(
             company,
             doc.id,
             DocumentEventType.PARSED,
-            {"warnings": warnings, "doc_type": doc_type.value, "total": str(parsed.total)},
+            {
+                "warnings": warnings,
+                "doc_type": doc_type.value,
+                "total": str(parsed.total),
+                "signature": {"present": sig.present, "valid": sig.valid, "signer": sig.signer},
+            },
         )
     )
     try:
