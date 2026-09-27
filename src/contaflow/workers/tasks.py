@@ -26,7 +26,7 @@ from contaflow.models.company import Company
 from contaflow.models.enums import DocumentStatus
 from contaflow.models.source_document import SourceDocument
 from contaflow.odoo.client import XmlRpcOdooClient
-from contaflow.odoo.posting import post_document
+from contaflow.odoo.posting import post_document, reverse_document
 from contaflow.workers.celery_app import celery_app
 from contaflow.workers.dead_letter import DeadLetterTask
 
@@ -176,4 +176,33 @@ def post_document_task(document_id: str) -> str:
             company.odoo_url, company.odoo_db, company.odoo_username, company.odoo_password
         )
         status = post_document(session, client, uuid.UUID(document_id))
+    return status.value
+
+
+@celery_app.task(  # type: ignore[untyped-decorator]
+    name="contaflow.workers.tasks.reverse_document",
+    base=DeadLetterTask,
+    autoretry_for=_TRANSIENT,
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=5,
+)
+def reverse_document_task(document_id: str) -> str:
+    """Reversa en Odoo un documento POSTED (asiento inverso)."""
+    with SyncSessionLocal() as session:
+        doc = session.get(SourceDocument, uuid.UUID(document_id))
+        if doc is None:
+            logger.warning("reverse_document: documento %s no existe", document_id)
+            return "NOT_FOUND"
+        company = session.get(Company, doc.company_id)
+        if company is None or not (
+            company.odoo_url and company.odoo_db and company.odoo_username and company.odoo_password
+        ):
+            logger.warning("reverse_document: empresa sin credenciales de Odoo (%s)", document_id)
+            return doc.status.value
+        client = XmlRpcOdooClient(
+            company.odoo_url, company.odoo_db, company.odoo_username, company.odoo_password
+        )
+        status = reverse_document(session, client, uuid.UUID(document_id))
     return status.value

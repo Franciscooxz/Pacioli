@@ -190,3 +190,22 @@ async def post_document_endpoint(
 
     post_document_task.delay(str(document_id))
     return {"status": "queued", "document_id": str(document_id)}
+
+
+@router.post("/{document_id}/reverse", status_code=status.HTTP_202_ACCEPTED)
+async def reverse_document_endpoint(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str]:
+    """Encola el reverso en Odoo (asiento inverso) de un documento POSTED."""
+    doc = await _get_owned_document(session, current_user, document_id)
+    if doc.status is not DocumentStatus.POSTED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Solo se reversa un documento POSTED (esta en {doc.status.value})",
+        )
+    from contaflow.workers.tasks import reverse_document_task
+
+    reverse_document_task.delay(str(document_id))
+    return {"status": "queued", "document_id": str(document_id)}

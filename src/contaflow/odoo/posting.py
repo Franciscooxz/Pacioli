@@ -275,6 +275,77 @@ def _record_posting(session: Session, doc: SourceDocument, odoo_move_id: int) ->
     session.add(_event(doc, DocumentEventType.POSTED, {"odoo_move_id": odoo_move_id}))
 
 
+def _plan_move(
+    session: Session,
+    client: OdooClient,
+    doc: SourceDocument,
+    company: Company,
+    trm_provider: TrmProvider | None,
+) -> tuple[list[MoveLine], int, str, str]:
+    """Arma las lineas FINALES, el diario y la contraparte. Lanza PostingError si falta algo.
+
+    Devuelve (lineas, journal_id, nit_contraparte, nombre_contraparte). Lo usan tanto la
+    contabilizacion como el reverso (que luego invierte las lineas).
+    """
+    subtotal = doc.subtotal
+    proposed = doc.proposed_account_code
+    if not proposed or subtotal is None:
+        raise PostingError("Documento sin cuenta propuesta o sin subtotal")
+    issuer_nit = doc.issuer_nit
+    if not issuer_nit:
+        raise PostingError("Documento sin NIT de emisor")
+
+    accounts = PostingAccounts.from_config(company.posting_config)
+    side = posting_side(doc.doc_type, company.nit, issuer_nit, doc.receiver_nit)
+    taxes = list(session.scalars(select(DocumentTax).where(DocumentTax.document_id == doc.id)))
+    rate = _resolve_trm(doc, trm_provider)
+
+    if side is PostingSide.PURCHASE:
+        lines = build_move_lines(subtotal, proposed, taxes, accounts, rate)
+        journal_id = client.find_purchase_journal_id()
+        if journal_id is None:
+            raise PostingError("Odoo no tiene un diario de compras")
+        partner_nit = issuer_nit
+        partner_name = doc.issuer_name or issuer_nit
+    else:
+        lines = build_sale_move_lines(subtotal, proposed, taxes, accounts, rate)
+        journal_id = client.find_sale_journal_id()
+        if journal_id is None:
+            raise PostingError("Odoo no tiene un diario de ventas")
+        if not doc.receiver_nit:
+            raise PostingError("Documento de venta sin NIT del cliente (receiver_nit)")
+        partner_nit = doc.receiver_nit
+        partner_name = doc.receiver_nit
+
+    # Una nota credito reversa el asiento de su lado; la nota debito va igual (no se invierte).
+    if doc.doc_type is DocType.NOTA_CREDITO:
+        lines = reverse_lines(lines)
+
+    return lines, journal_id, partner_nit, partner_name
+
+
+def _build_line_ids(client: OdooClient, lines: list[MoveLine], partner_id: int) -> list[Any]:
+    line_ids: list[Any] = []
+    for line in lines:
+        account_id = client.find_account_id(line.account_code)
+        if account_id is None:
+            raise PostingError(f"La cuenta {line.account_code} no existe en Odoo")
+        line_ids.append(
+            (
+                0,
+                0,
+                {
+                    "account_id": account_id,
+                    "partner_id": partner_id,
+                    "name": line.name,
+                    "debit": _to_odoo_amount(line.debit),
+                    "credit": _to_odoo_amount(line.credit),
+                },
+            )
+        )
+    return line_ids
+
+
 def post_document(
     session: Session,
     client: OdooClient,
@@ -294,28 +365,26 @@ def post_document(
     if doc.status is not DocumentStatus.CLASSIFIED:
         return doc.status  # solo se contabiliza lo clasificado/aprobado
 
-    # Idempotencia local: ya hay un posting para este documento.
-    if session.scalar(select(Posting.id).where(Posting.document_id == doc.id)) is not None:
+    # Idempotencia local: ya hay un asiento ORIGINAL vigente (no reverso, no reversado).
+    active = session.scalar(
+        select(Posting.id).where(
+            Posting.document_id == doc.id,
+            Posting.is_reversal.is_(False),
+            Posting.reversed_by.is_(None),
+        )
+    )
+    if active is not None:
         doc.status = DocumentStatus.POSTED
         session.commit()
         return doc.status
 
     try:
-        subtotal = doc.subtotal
-        proposed = doc.proposed_account_code
-        if not proposed or subtotal is None:
-            raise PostingError("Documento sin cuenta propuesta o sin subtotal")
         cufe = doc.cufe
-        issuer_nit = doc.issuer_nit
-        if not cufe or not issuer_nit:
-            raise PostingError("Documento sin CUFE o NIT de emisor")
-
+        if not cufe:
+            raise PostingError("Documento sin CUFE")
         company = session.get(Company, doc.company_id)
         if company is None:
             raise PostingError("company inexistente")
-        accounts = PostingAccounts.from_config(company.posting_config)
-
-        side = posting_side(doc.doc_type, company.nit, issuer_nit, doc.receiver_nit)
 
         # Idempotencia contra Odoo: ¿ya existe un asiento con este CUFE?
         existing = client.find_move_by_ref(cufe)
@@ -325,64 +394,18 @@ def post_document(
             logger.info("documento %s ya estaba en Odoo (move %s)", doc.id, existing)
             return doc.status
 
-        taxes = list(session.scalars(select(DocumentTax).where(DocumentTax.document_id == doc.id)))
-
-        # Moneda extranjera -> COP con la TRM (1 si ya es COP).
-        rate = _resolve_trm(doc, trm_provider)
-
-        if side is PostingSide.PURCHASE:
-            lines = build_move_lines(subtotal, proposed, taxes, accounts, rate)
-            journal_id = client.find_purchase_journal_id()
-            if journal_id is None:
-                raise PostingError("Odoo no tiene un diario de compras")
-            # La contraparte de una compra es el emisor (proveedor).
-            partner_nit = issuer_nit
-            partner_name = doc.issuer_name or issuer_nit
-        else:
-            lines = build_sale_move_lines(subtotal, proposed, taxes, accounts, rate)
-            journal_id = client.find_sale_journal_id()
-            if journal_id is None:
-                raise PostingError("Odoo no tiene un diario de ventas")
-            # La contraparte de una venta es el receptor (cliente).
-            if not doc.receiver_nit:
-                raise PostingError("Documento de venta sin NIT del cliente (receiver_nit)")
-            partner_nit = doc.receiver_nit
-            partner_name = doc.receiver_nit
-
-        # Una nota credito reversa el asiento de su lado; la nota debito va igual que la
-        # factura de su lado (no se invierte).
-        if doc.doc_type is DocType.NOTA_CREDITO:
-            lines = reverse_lines(lines)
-
+        lines, journal_id, partner_nit, partner_name = _plan_move(
+            session, client, doc, company, trm_provider
+        )
         partner_id = client.find_partner_id(partner_nit) or client.create_partner(
             partner_name, partner_nit
         )
-
-        line_ids: list[Any] = []
-        for line in lines:
-            account_id = client.find_account_id(line.account_code)
-            if account_id is None:
-                raise PostingError(f"La cuenta {line.account_code} no existe en Odoo")
-            line_ids.append(
-                (
-                    0,
-                    0,
-                    {
-                        "account_id": account_id,
-                        "partner_id": partner_id,
-                        "name": line.name,
-                        "debit": _to_odoo_amount(line.debit),
-                        "credit": _to_odoo_amount(line.credit),
-                    },
-                )
-            )
-
         move = {
             "move_type": "entry",
             "ref": cufe,
             "date": doc.issue_date.isoformat() if doc.issue_date else None,
             "journal_id": journal_id,
-            "line_ids": line_ids,
+            "line_ids": _build_line_ids(client, lines, partner_id),
         }
         move_id = client.create_move(move)
         client.post_move(move_id)
@@ -403,5 +426,82 @@ def post_document(
         return DocumentStatus.POSTING_FAILED
     except OdooConnectionError:
         # Transitorio: no marcamos fallo, dejamos que la tarea reintente.
+        session.rollback()
+        raise
+
+
+def reverse_document(
+    session: Session, client: OdooClient, document_id: uuid.UUID
+) -> DocumentStatus:
+    """Reversa un documento POSTED con un asiento inverso (inmutabilidad del ledger).
+
+    No edita el asiento original: crea uno reverso (lineas invertidas), enlaza el original
+    via reversed_by y deja el documento en CLASSIFIED (listo para corregir y re-contabilizar).
+    """
+    doc = session.get(SourceDocument, document_id)
+    if doc is None:
+        raise PostingError(f"source_document inexistente: {document_id}")
+    if doc.status is not DocumentStatus.POSTED:
+        return doc.status  # solo se reversa lo contabilizado
+
+    original = session.scalar(
+        select(Posting).where(
+            Posting.document_id == doc.id,
+            Posting.is_reversal.is_(False),
+            Posting.reversed_by.is_(None),
+        )
+    )
+    if original is None:
+        return doc.status  # nada vigente por reversar
+
+    try:
+        company = session.get(Company, doc.company_id)
+        if company is None:
+            raise PostingError("company inexistente")
+        cufe = doc.cufe or str(doc.id)
+
+        lines, journal_id, partner_nit, partner_name = _plan_move(
+            session, client, doc, company, None
+        )
+        partner_id = client.find_partner_id(partner_nit) or client.create_partner(
+            partner_name, partner_nit
+        )
+        move = {
+            "move_type": "entry",
+            "ref": f"REV-{cufe}",
+            "date": doc.issue_date.isoformat() if doc.issue_date else None,
+            "journal_id": journal_id,
+            "line_ids": _build_line_ids(client, reverse_lines(lines), partner_id),
+        }
+        move_id = client.create_move(move)
+        client.post_move(move_id)
+
+        reversal = Posting(
+            tenant_id=doc.tenant_id,
+            document_id=doc.id,
+            odoo_move_id=move_id,
+            posted_at=datetime.now(UTC),
+            is_reversal=True,
+        )
+        session.add(reversal)
+        session.flush()
+        original.reversed_by = reversal.id
+        doc.status = DocumentStatus.CLASSIFIED
+        session.add(
+            _event(
+                doc,
+                DocumentEventType.REVERSED,
+                {"reversal_move_id": move_id, "original_move_id": original.odoo_move_id},
+            )
+        )
+        session.commit()
+        logger.info(
+            "documento %s reversado (move %s -> %s)", doc.id, original.odoo_move_id, move_id
+        )
+        return doc.status
+    except PostingError:
+        session.rollback()
+        raise
+    except OdooConnectionError:
         session.rollback()
         raise

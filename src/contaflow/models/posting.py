@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -47,3 +47,6 @@ class Posting(UUIDPkMixin, TimestampMixin, Base):
         ForeignKey("posting.id", ondelete="RESTRICT"),
         nullable=True,
     )
+
+    # True si este posting ES el asiento reverso (no un asiento original).
+    is_reversal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

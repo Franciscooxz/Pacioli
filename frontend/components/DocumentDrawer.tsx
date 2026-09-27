@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Ban, Check, Send, X } from "lucide-react";
+import { Ban, Check, RotateCcw, Send, X } from "lucide-react";
 import {
   approveDocument,
   getDocument,
   getDocumentEvents,
   postDocument,
   rejectDocument,
+  reverseDocument,
 } from "@/lib/api";
 import { money, pct } from "@/lib/format";
 import type { DocEvent, DocumentDetail } from "@/lib/types";
@@ -75,7 +76,7 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
   }, [id, onAuthError]);
 
   const act = useCallback(
-    async (kind: "approve" | "reject" | "post") => {
+    async (kind: "approve" | "reject" | "post" | "reverse") => {
       if (!d) return;
       setErr("");
       setBusy(true);
@@ -89,8 +90,10 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
           await approveDocument(d.id, account.trim(), createRule);
         } else if (kind === "reject") {
           await rejectDocument(d.id, "rechazado desde la consola");
-        } else {
+        } else if (kind === "post") {
           await postDocument(d.id);
+        } else {
+          await reverseDocument(d.id);
         }
         onChanged();
         onClose();
@@ -105,6 +108,7 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
   const c = pct(d?.classification_confidence ?? null);
   const canAct = d?.status === "PENDING_REVIEW" || d?.status === "CLASSIFIED";
   const canPost = d?.status === "CLASSIFIED";
+  const canReverse = d?.status === "POSTED";
 
   return (
     <div className="fixed inset-0 z-30 flex justify-end">
@@ -264,31 +268,44 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
 
         {d && (
           <footer className="flex gap-3 border-t border-line bg-white px-6 py-4">
-            <button
-              type="button"
-              disabled={!canAct || busy}
-              onClick={() => act("approve")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white transition hover:bg-primary-hover disabled:opacity-40"
-            >
-              <Check size={18} /> Aprobar
-            </button>
-            <button
-              type="button"
-              disabled={!canPost || busy}
-              onClick={() => act("post")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-success py-2.5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-40"
-            >
-              <Send size={18} /> Contabilizar
-            </button>
-            <button
-              type="button"
-              disabled={!canAct || busy}
-              onClick={() => act("reject")}
-              aria-label="Rechazar"
-              className="flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-bold text-danger transition hover:bg-danger/5 disabled:opacity-40"
-            >
-              <Ban size={18} />
-            </button>
+            {canReverse ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => act("reverse")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-line py-2.5 text-sm font-bold text-danger transition hover:bg-danger/5 disabled:opacity-40"
+              >
+                <RotateCcw size={18} /> Reversar asiento
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={!canAct || busy}
+                  onClick={() => act("approve")}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-bold text-white transition hover:bg-primary-hover disabled:opacity-40"
+                >
+                  <Check size={18} /> Aprobar
+                </button>
+                <button
+                  type="button"
+                  disabled={!canPost || busy}
+                  onClick={() => act("post")}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-success py-2.5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-40"
+                >
+                  <Send size={18} /> Contabilizar
+                </button>
+                <button
+                  type="button"
+                  disabled={!canAct || busy}
+                  onClick={() => act("reject")}
+                  aria-label="Rechazar"
+                  className="flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-bold text-danger transition hover:bg-danger/5 disabled:opacity-40"
+                >
+                  <Ban size={18} />
+                </button>
+              </>
+            )}
           </footer>
         )}
       </aside>

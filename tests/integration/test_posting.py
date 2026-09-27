@@ -17,7 +17,7 @@ from contaflow.models.enums import DocType, DocumentEventType, DocumentStatus, T
 from contaflow.models.posting import Posting
 from contaflow.models.source_document import SourceDocument
 from contaflow.models.tenant import Tenant
-from contaflow.odoo.posting import post_document
+from contaflow.odoo.posting import post_document, reverse_document
 
 POSTING_CONFIG = {
     "payable_account_code": "220505",
@@ -434,3 +434,43 @@ def test_nota_perspectiva_indeterminada_falla(pg_engine: Engine) -> None:
 
         status = post_document(session, odoo, doc_id)
         assert status is DocumentStatus.POSTING_FAILED
+
+
+def test_reversar_crea_asiento_inverso(pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        doc_id = _seed_classified(session)
+        odoo = FakeOdoo(KNOWN_ACCOUNTS)
+        assert post_document(session, odoo, doc_id) is DocumentStatus.POSTED
+
+        status = reverse_document(session, odoo, doc_id)
+        assert status is DocumentStatus.CLASSIFIED  # queda listo para corregir/re-postear
+        assert len(odoo.posted) == 2  # asiento original + reverso
+
+        rev_move = odoo.moves[max(odoo.moves)]
+        assert rev_move["ref"].startswith("REV-")
+        # En la compra la CxP (220505 -> 5) era credito; el reverso la pone en debito.
+        cxp = _line_by_account(rev_move, 5)
+        assert cxp["debit"] > 0
+        assert cxp["credit"] == 0.0
+        _assert_move_balanced(rev_move)
+
+        postings = list(session.scalars(select(Posting).where(Posting.document_id == doc_id)))
+        assert len(postings) == 2
+        original = next(p for p in postings if not p.is_reversal)
+        reversal = next(p for p in postings if p.is_reversal)
+        assert original.reversed_by == reversal.id
+
+
+def test_repost_despues_de_reversar(pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        doc_id = _seed_classified(session)
+        odoo = FakeOdoo(KNOWN_ACCOUNTS)
+        assert post_document(session, odoo, doc_id) is DocumentStatus.POSTED
+        assert reverse_document(session, odoo, doc_id) is DocumentStatus.CLASSIFIED
+        # Re-contabilizar el documento corregido crea un nuevo asiento original.
+        assert post_document(session, odoo, doc_id) is DocumentStatus.POSTED
+
+        postings = list(session.scalars(select(Posting).where(Posting.document_id == doc_id)))
+        assert len(postings) == 3  # original + reverso + nuevo original
+        activos = [p for p in postings if not p.is_reversal and p.reversed_by is None]
+        assert len(activos) == 1

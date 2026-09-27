@@ -17,5 +17,6 @@ def test_todas_las_tareas_de_ingesta_estan_mapeadas() -> None:
         "contaflow.workers.tasks.classify_document": FailureStage.CLASSIFY,
         "contaflow.workers.tasks.llm_suggest": FailureStage.LLM_SUGGEST,
         "contaflow.workers.tasks.post_document": FailureStage.POST,
+        "contaflow.workers.tasks.reverse_document": FailureStage.POST,
     }
     assert esperadas == _STAGE_BY_TASK

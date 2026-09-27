@@ -121,6 +121,10 @@ export function postDocument(id: string): Promise<void> {
   return authed<void>(`/documents/${id}/post`, { method: "POST" });
 }
 
+export function reverseDocument(id: string): Promise<void> {
+  return authed<void>(`/documents/${id}/reverse`, { method: "POST" });
+}
+
 export function listCompanies(): Promise<Company[]> {
   return authed<Company[]>("/companies");
 }

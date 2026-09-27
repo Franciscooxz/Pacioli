@@ -86,7 +86,10 @@ Reemplaza el "terminal financiero" anterior.
 
 Huecos de funcionalidad (no integraciones) para que sirva día a día:
 - [ ] Motor de retenciones del comprador (retefuente/reteICA que NO vienen en el XML).
-- [ ] Reversos/correcciones de asientos contabilizados (modelo ya tiene `reversed_by`).
+- [x] Reversos/correcciones de asientos: `reverse_document` crea el asiento inverso, enlaza
+      el original (`reversed_by`) y deja el doc en CLASSIFIED (re-posteable, con `is_reversal`
+      para no chocar con la idempotencia). Endpoint `POST /documents/{id}/reverse`, tarea
+      Celery y botón "Reversar" en el panel. Tests con FakeOdoo (reverso invierte + re-posteo).
 - [x] CRUD de empresas desde la UI (crear/editar + credenciales Odoo/IMAP cifradas +
       cuentas de posting). Backend: GET /companies/{id}, POST y PATCH (nunca devuelven
       contraseñas). Verificado: mypy, 6 tests, y en vivo (crear con credenciales). ESTO
