@@ -89,3 +89,13 @@ class ApproveRequest(BaseModel):
 
 class RejectRequest(BaseModel):
     reason: str | None = None
+
+
+class BulkRequest(BaseModel):
+    ids: list[uuid.UUID]
+    reason: str | None = None
+
+
+class BulkResult(BaseModel):
+    processed: int
+    skipped: int

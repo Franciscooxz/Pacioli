@@ -180,6 +180,40 @@ async def test_documentos_filtrados_por_empresa(
     assert len(solo_a) == 1  # filtrado por empresa
 
 
+async def test_aprobar_en_lote(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        _, company = _seed_user_company(session, "bk@f.co", "Firma BK")
+        d1 = _seed_pending_doc(session, company)
+        d2 = _seed_pending_doc(session, company)
+        # d1 tiene cuenta propuesta; d2 no -> d2 se omite.
+        doc1 = session.get(SourceDocument, d1)
+        assert doc1 is not None
+        doc1.proposed_account_code = "511595"
+        session.commit()
+
+    headers = await _login(api_client, "bk@f.co")
+    resp = await api_client.post(
+        "/documents/bulk/approve", headers=headers, json={"ids": [str(d1), str(d2)]}
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"processed": 1, "skipped": 1}
+    detail = await api_client.get(f"/documents/{d1}", headers=headers)
+    assert detail.json()["status"] == "CLASSIFIED"
+
+
+async def test_rechazar_en_lote(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        _, company = _seed_user_company(session, "bkr@f.co", "Firma BKR")
+        d1 = _seed_pending_doc(session, company)
+
+    headers = await _login(api_client, "bkr@f.co")
+    resp = await api_client.post("/documents/bulk/reject", headers=headers, json={"ids": [str(d1)]})
+    assert resp.status_code == 200
+    assert resp.json()["processed"] == 1
+    detail = await api_client.get(f"/documents/{d1}", headers=headers)
+    assert detail.json()["status"] == "REJECTED"
+
+
 async def test_timeline_de_eventos(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
     with Session(pg_engine) as session:
         _, company = _seed_user_company(session, "tl@f.co", "Firma TL")

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { AuthError, clearToken, listDocuments } from "@/lib/api";
+import { AuthError, bulkApprove, bulkReject, clearToken, listDocuments } from "@/lib/api";
 import { money, pct } from "@/lib/format";
 import type { DocStatus, DocumentSummary } from "@/lib/types";
 import DocumentDrawer from "@/components/DocumentDrawer";
@@ -39,6 +39,8 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
 
   const onAuthError = useCallback(
     (e: unknown) => {
@@ -56,6 +58,7 @@ export default function DocumentsPage() {
     setLoading(true);
     try {
       setDocs(await listDocuments(FILTER_STATUS[filter], companyId));
+      setSelected(new Set());
     } catch (e) {
       onAuthError(e);
     } finally {
@@ -74,6 +77,41 @@ export default function DocumentsPage() {
       `${d.issuer_nit ?? ""} ${d.issuer_name ?? ""} ${d.cufe ?? ""}`.toLowerCase().includes(q),
     );
   }, [docs, query]);
+
+  const allSelected = visible.length > 0 && visible.every((d) => selected.has(d.id));
+
+  const toggle = (id: string) => {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelected((s) =>
+      visible.every((d) => s.has(d.id)) ? new Set() : new Set(visible.map((d) => d.id)),
+    );
+  };
+
+  const runBulk = useCallback(
+    async (action: "approve" | "reject") => {
+      const ids = [...selected];
+      if (ids.length === 0) return;
+      setBusy(true);
+      try {
+        if (action === "approve") await bulkApprove(ids);
+        else await bulkReject(ids);
+        await load();
+      } catch (e) {
+        onAuthError(e);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [selected, load, onAuthError],
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -107,11 +145,44 @@ export default function DocumentsPage() {
         ))}
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 rounded-card bg-primary/5 px-4 py-3">
+          <span className="text-sm font-bold text-ink">{selected.size} seleccionados</span>
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => runBulk("approve")}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-hover disabled:opacity-50"
+            >
+              Aprobar
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => runBulk("reject")}
+              className="rounded-lg border border-line px-4 py-2 text-sm font-bold text-danger transition hover:bg-danger/5 disabled:opacity-50"
+            >
+              Rechazar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-card bg-white p-2 shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    aria-label="Seleccionar todos"
+                    className="h-4 w-4 rounded border-line text-primary"
+                  />
+                </th>
                 <th className="px-4 py-3 font-bold">Emisor</th>
                 <th className="px-4 py-3 font-bold">NIT</th>
                 <th className="px-4 py-3 font-bold">Tipo</th>
@@ -130,6 +201,15 @@ export default function DocumentsPage() {
                     onClick={() => setOpenId(d.id)}
                     className="cursor-pointer border-b border-line/50 last:border-0 hover:bg-primary/5"
                   >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(d.id)}
+                        onChange={() => toggle(d.id)}
+                        aria-label="Seleccionar documento"
+                        className="h-4 w-4 rounded border-line text-primary"
+                      />
+                    </td>
                     <td className="px-4 py-3 font-semibold text-ink">{d.issuer_name ?? "(sin emisor)"}</td>
                     <td className="px-4 py-3 text-ink-muted">{d.issuer_nit ?? "—"}</td>
                     <td className="px-4 py-3 text-ink-muted">
@@ -154,7 +234,7 @@ export default function DocumentsPage() {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-ink-muted">
+                  <td colSpan={8} className="px-4 py-12 text-center text-ink-muted">
                     {loading ? "Cargando…" : "Sin documentos"}
                   </td>
                 </tr>

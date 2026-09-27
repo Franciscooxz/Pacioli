@@ -23,6 +23,8 @@ from contaflow.models.source_document import SourceDocument
 from contaflow.models.user import User
 from contaflow.schemas.document import (
     ApproveRequest,
+    BulkRequest,
+    BulkResult,
     DocumentDetailOut,
     DocumentOut,
     EventOut,
@@ -77,6 +79,73 @@ async def list_documents(
         query.order_by(SourceDocument.received_at.desc()).limit(limit).offset(offset)
     )
     return list(result)
+
+
+@router.post("/bulk/approve", response_model=BulkResult)
+async def bulk_approve(
+    body: BulkRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> BulkResult:
+    """Aprueba en lote: usa la cuenta propuesta de cada documento. Omite los que no aplican."""
+    docs = await session.scalars(
+        select(SourceDocument).where(
+            SourceDocument.tenant_id == current_user.tenant_id,
+            SourceDocument.id.in_(body.ids),
+        )
+    )
+    processed = 0
+    skipped = 0
+    for doc in docs:
+        if doc.status in _REVIEWABLE and doc.proposed_account_code:
+            doc.classification_confidence = Decimal("1.0")
+            doc.status = DocumentStatus.CLASSIFIED
+            session.add(
+                _user_event(
+                    doc,
+                    current_user,
+                    DocumentEventType.CLASSIFIED,
+                    {"account_code": doc.proposed_account_code, "source": "human_bulk"},
+                )
+            )
+            processed += 1
+        else:
+            skipped += 1
+    await session.commit()
+    return BulkResult(processed=processed, skipped=skipped)
+
+
+@router.post("/bulk/reject", response_model=BulkResult)
+async def bulk_reject(
+    body: BulkRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> BulkResult:
+    """Rechaza en lote los documentos que estan en revision/clasificados."""
+    docs = await session.scalars(
+        select(SourceDocument).where(
+            SourceDocument.tenant_id == current_user.tenant_id,
+            SourceDocument.id.in_(body.ids),
+        )
+    )
+    processed = 0
+    skipped = 0
+    for doc in docs:
+        if doc.status in _REVIEWABLE:
+            doc.status = DocumentStatus.REJECTED
+            session.add(
+                _user_event(
+                    doc,
+                    current_user,
+                    DocumentEventType.REJECTED,
+                    {"reason": body.reason, "source": "human_bulk"},
+                )
+            )
+            processed += 1
+        else:
+            skipped += 1
+    await session.commit()
+    return BulkResult(processed=processed, skipped=skipped)
 
 
 @router.get("/{document_id}", response_model=DocumentDetailOut)

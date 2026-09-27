@@ -125,6 +125,25 @@ export function reverseDocument(id: string): Promise<void> {
   return authed<void>(`/documents/${id}/reverse`, { method: "POST" });
 }
 
+export interface BulkResult {
+  processed: number;
+  skipped: number;
+}
+
+export function bulkApprove(ids: string[]): Promise<BulkResult> {
+  return authed<BulkResult>("/documents/bulk/approve", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export function bulkReject(ids: string[], reason?: string): Promise<BulkResult> {
+  return authed<BulkResult>("/documents/bulk/reject", {
+    method: "POST",
+    body: JSON.stringify({ ids, reason: reason ?? null }),
+  });
+}
+
 export function listCompanies(): Promise<Company[]> {
   return authed<Company[]>("/companies");
 }

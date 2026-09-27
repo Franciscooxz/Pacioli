@@ -100,7 +100,9 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
       GET /reports/summary y /reports/export.csv (con tests de agregación y aislamiento).
 - [x] Timeline/auditoría del documento en la UI: `GET /documents/{id}/events` + sección
       "Historial" en el panel del documento (con test).
-- [ ] Acciones masivas, asignación a revisor y comentarios; notificaciones reales.
+- [x] Acciones masivas: selección múltiple en la lista de documentos + aprobar/rechazar
+      en lote (`POST /documents/bulk/approve` y `/bulk/reject`, con tests).
+- [ ] Asignación a revisor y comentarios; notificaciones reales.
 - [ ] Nómina completa (hoy solo parseo ligero).
 
 ## Fase F — Conexion con el mundo real (requiere credenciales / datos)  [ ]
