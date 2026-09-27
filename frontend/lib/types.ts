@@ -111,6 +111,22 @@ export interface Rule {
   active: boolean;
 }
 
+export interface MonthBucket {
+  month: string;
+  count: number;
+  total: string;
+}
+
+export interface ReportSummary {
+  count: number;
+  subtotal: string;
+  total_tax: string;
+  total_withholding: string;
+  total: string;
+  by_status: Record<string, number>;
+  by_month: MonthBucket[];
+}
+
 export interface IngestionFailure {
   id: string;
   stage: string;

@@ -7,6 +7,7 @@ import type {
   DocumentSummary,
   IngestionFailure,
   Me,
+  ReportSummary,
   Rule,
 } from "./types";
 
@@ -169,4 +170,47 @@ export function listFailures(
 
 export function resolveFailure(id: string): Promise<IngestionFailure> {
   return authed<IngestionFailure>(`/failures/${id}/resolve`, { method: "POST" });
+}
+
+export interface ReportFilters {
+  companyId?: string | null;
+  status?: DocStatus;
+  from?: string;
+  to?: string;
+}
+
+function reportQuery(f: ReportFilters): string {
+  const p = new URLSearchParams();
+  if (f.companyId) p.set("company_id", f.companyId);
+  if (f.status) p.set("status", f.status);
+  if (f.from) p.set("from", f.from);
+  if (f.to) p.set("to", f.to);
+  const q = p.toString();
+  return q ? `?${q}` : "";
+}
+
+export function getReportSummary(f: ReportFilters): Promise<ReportSummary> {
+  return authed<ReportSummary>(`/reports/summary${reportQuery(f)}`);
+}
+
+export async function downloadReportCsv(f: ReportFilters): Promise<void> {
+  const token = getToken();
+  if (!token) throw new AuthError("sin sesion");
+  const res = await fetch(`${API}/reports/export.csv${reportQuery(f)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) {
+    clearToken();
+    throw new AuthError("sesion expirada");
+  }
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "documentos.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

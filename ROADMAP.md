@@ -79,7 +79,8 @@ Reemplaza el "terminal financiero" anterior.
       "Todas las empresas") vía contexto React; Dashboard, Documentos, Reglas y Fallidos
       se filtran por la empresa activa. Backend: filtro `company_id` en GET /documents y
       GET /failures (con test). Verificado: mypy, 10 tests, typecheck y en vivo.
-- [ ] Menú móvil (el sidebar hoy se oculta bajo `md`).
+- [x] Menú móvil: hamburguesa en el topbar + cajón deslizante (Sidebar con drawer móvil).
+      Cierra la Fase E. Verificado en vivo a 375px.
 
 ## Backlog funcional (para uso real de una firma; discutido 2026-09-24)
 
@@ -91,7 +92,9 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
       contraseñas). Verificado: mypy, 6 tests, y en vivo (crear con credenciales). ESTO
       HABILITA cargar los accesos reales para el punta a punta (Odoo/IMAP).
 - [ ] Gestión de usuarios/roles/invitaciones (hoy 1 usuario = 1 firma).
-- [ ] Reportería y exportación (libro diario, IVA, retenciones, por empresa/mes; Excel/PDF).
+- [x] Reportería y exportación: pantalla /reports con filtros (empresa/fecha/estado),
+      totales (base, IVA, retenciones, total), desglose por mes y export CSV. Backend
+      GET /reports/summary y /reports/export.csv (con tests de agregación y aislamiento).
 - [ ] Timeline/auditoría del documento en la UI (los eventos ya se guardan).
 - [ ] Acciones masivas, asignación a revisor y comentarios; notificaciones reales.
 - [ ] Nómina completa (hoy solo parseo ligero).

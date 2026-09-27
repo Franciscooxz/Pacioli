@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Building2 } from "lucide-react";
+import { Bell, Building2, Menu } from "lucide-react";
 import { getMe } from "@/lib/api";
 import type { Me } from "@/lib/types";
 import { useCompany } from "@/components/CompanyProvider";
 
-export default function Topbar() {
+export default function Topbar({ onMenu }: { onMenu?: () => void }) {
   const [me, setMe] = useState<Me | null>(null);
   const { companies, companyId, setCompanyId } = useCompany();
 
@@ -22,7 +22,16 @@ export default function Topbar() {
   const initial = name[0]?.toUpperCase() ?? "U";
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-line bg-white px-6">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-line bg-white px-4 md:px-6">
+      <button
+        type="button"
+        onClick={onMenu}
+        aria-label="Abrir menú"
+        className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition hover:bg-canvas md:hidden"
+      >
+        <Menu size={22} />
+      </button>
+
       <div className="flex items-center gap-2">
         <Building2 size={18} className="text-ink-muted" />
         <select

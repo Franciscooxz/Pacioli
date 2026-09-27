@@ -10,6 +10,7 @@ import Topbar from "@/components/Topbar";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
@@ -21,10 +22,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <CompanyProvider>
       <div className="flex min-h-screen bg-canvas">
-        <Sidebar />
+        <Sidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar />
-          <main className="flex-1 p-6">{children}</main>
+          <Topbar onMenu={() => setMenuOpen(true)} />
+          <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </CompanyProvider>
