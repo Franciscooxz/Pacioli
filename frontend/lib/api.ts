@@ -2,6 +2,7 @@ import type {
   Company,
   CompanyDetail,
   CompanyInput,
+  DocEvent,
   DocStatus,
   DocumentDetail,
   DocumentSummary,
@@ -92,6 +93,10 @@ export function listDocuments(
 
 export function getDocument(id: string): Promise<DocumentDetail> {
   return authed<DocumentDetail>(`/documents/${id}`);
+}
+
+export function getDocumentEvents(id: string): Promise<DocEvent[]> {
+  return authed<DocEvent[]>(`/documents/${id}/events`);
 }
 
 export function approveDocument(

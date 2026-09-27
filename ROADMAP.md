@@ -95,7 +95,8 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
 - [x] Reportería y exportación: pantalla /reports con filtros (empresa/fecha/estado),
       totales (base, IVA, retenciones, total), desglose por mes y export CSV. Backend
       GET /reports/summary y /reports/export.csv (con tests de agregación y aislamiento).
-- [ ] Timeline/auditoría del documento en la UI (los eventos ya se guardan).
+- [x] Timeline/auditoría del documento en la UI: `GET /documents/{id}/events` + sección
+      "Historial" en el panel del documento (con test).
 - [ ] Acciones masivas, asignación a revisor y comentarios; notificaciones reales.
 - [ ] Nómina completa (hoy solo parseo ligero).
 

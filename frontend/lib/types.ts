@@ -111,6 +111,14 @@ export interface Rule {
   active: boolean;
 }
 
+export interface DocEvent {
+  event_type: string;
+  actor_type: string;
+  actor_id: string | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface MonthBucket {
   month: string;
   count: number;

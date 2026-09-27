@@ -25,6 +25,7 @@ from contaflow.schemas.document import (
     ApproveRequest,
     DocumentDetailOut,
     DocumentOut,
+    EventOut,
     LineOut,
     RejectRequest,
     TaxOut,
@@ -91,6 +92,21 @@ async def get_document(
     detail.lines = [LineOut.model_validate(line) for line in lines]
     detail.taxes = [TaxOut.model_validate(tax) for tax in taxes]
     return detail
+
+
+@router.get("/{document_id}/events", response_model=list[EventOut])
+async def list_document_events(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> list[DocumentEvent]:
+    doc = await _get_owned_document(session, current_user, document_id)
+    events = await session.scalars(
+        select(DocumentEvent)
+        .where(DocumentEvent.document_id == doc.id)
+        .order_by(DocumentEvent.created_at)
+    )
+    return list(events)
 
 
 @router.post("/{document_id}/approve", response_model=DocumentOut)

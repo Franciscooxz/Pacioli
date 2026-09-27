@@ -5,12 +5,33 @@ import { Ban, Check, Send, X } from "lucide-react";
 import {
   approveDocument,
   getDocument,
+  getDocumentEvents,
   postDocument,
   rejectDocument,
 } from "@/lib/api";
 import { money, pct } from "@/lib/format";
-import type { DocumentDetail } from "@/lib/types";
+import type { DocEvent, DocumentDetail } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
+
+const EVENT_LABEL: Record<string, string> = {
+  RECEIVED: "Recibido",
+  PARSED: "Parseado",
+  PARSE_FAILED: "Parseo falló",
+  CLASSIFIED: "Clasificado",
+  SENT_TO_REVIEW: "Enviado a revisión",
+  REVIEWED: "Revisado",
+  POSTED: "Contabilizado",
+  POSTING_FAILED: "Posteo falló",
+  REJECTED: "Rechazado",
+  REVERSED: "Reversado",
+};
+
+function eventReason(ev: DocEvent): string {
+  const p = ev.payload ?? {};
+  if (typeof p.reason === "string") return p.reason;
+  if (typeof p.account_code === "string") return `cuenta ${p.account_code}`;
+  return "";
+}
 
 interface Props {
   id: string;
@@ -21,6 +42,7 @@ interface Props {
 
 export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: Props) {
   const [d, setD] = useState<DocumentDetail | null>(null);
+  const [events, setEvents] = useState<DocEvent[]>([]);
   const [account, setAccount] = useState("");
   const [createRule, setCreateRule] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -30,6 +52,14 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
     let alive = true;
     setD(null);
     setErr("");
+    setEvents([]);
+    getDocumentEvents(id)
+      .then((e) => {
+        if (alive) setEvents(e);
+      })
+      .catch(() => {
+        /* el historial es secundario; no bloquea el panel */
+      });
     getDocument(id)
       .then((doc) => {
         if (!alive) return;
@@ -197,6 +227,30 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
                   />
                   Crear regla para este emisor al aprobar
                 </label>
+              </section>
+
+              <section className="rounded-card bg-white p-5 shadow-card">
+                <h3 className="mb-3 text-sm font-bold text-ink">Historial</h3>
+                {events.length === 0 ? (
+                  <p className="text-sm text-ink-muted">Sin eventos</p>
+                ) : (
+                  <ol className="space-y-3">
+                    {events.map((ev, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                        <div>
+                          <div className="text-sm font-semibold text-ink">
+                            {EVENT_LABEL[ev.event_type] ?? ev.event_type}
+                          </div>
+                          <div className="text-xs text-ink-muted">
+                            {ev.created_at.slice(0, 16).replace("T", " ")} · {ev.actor_type}
+                            {eventReason(ev) ? ` · ${eventReason(ev)}` : ""}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </section>
 
               {err && (

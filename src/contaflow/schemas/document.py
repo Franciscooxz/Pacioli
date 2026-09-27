@@ -5,10 +5,17 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from contaflow.models.enums import DocType, DocumentStatus, TaxCategory
+from contaflow.models.enums import (
+    ActorType,
+    DocType,
+    DocumentEventType,
+    DocumentStatus,
+    TaxCategory,
+)
 
 
 class DocumentOut(BaseModel):
@@ -59,6 +66,18 @@ class DocumentDetailOut(DocumentOut):
     proposed_cost_center: str | None
     lines: list[LineOut] = []
     taxes: list[TaxOut] = []
+
+
+class EventOut(BaseModel):
+    """Un evento de la bitacora append-only del documento (para el timeline en la UI)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    event_type: DocumentEventType
+    actor_type: ActorType
+    actor_id: str | None
+    payload: dict[str, Any] | None
+    created_at: datetime
 
 
 class ApproveRequest(BaseModel):

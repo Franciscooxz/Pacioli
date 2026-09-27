@@ -180,6 +180,20 @@ async def test_documentos_filtrados_por_empresa(
     assert len(solo_a) == 1  # filtrado por empresa
 
 
+async def test_timeline_de_eventos(api_client: httpx.AsyncClient, pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        _, company = _seed_user_company(session, "tl@f.co", "Firma TL")
+        doc_id = _seed_pending_doc(session, company)
+
+    headers = await _login(api_client, "tl@f.co")
+    await api_client.post(
+        f"/documents/{doc_id}/approve", headers=headers, json={"account_code": "511595"}
+    )
+    events = (await api_client.get(f"/documents/{doc_id}/events", headers=headers)).json()
+    assert len(events) >= 1
+    assert "CLASSIFIED" in {e["event_type"] for e in events}
+
+
 async def test_no_puede_tocar_documento_de_otro_tenant(
     api_client: httpx.AsyncClient, pg_engine: Engine
 ) -> None:
