@@ -117,7 +117,12 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
         onClick={onClose}
         aria-hidden="true"
       />
-      <aside className="relative flex h-full w-full max-w-lg flex-col bg-canvas shadow-2xl">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalle del documento"
+        className="relative flex h-full w-full max-w-lg flex-col bg-canvas shadow-2xl"
+      >
         <header className="flex items-center justify-between border-b border-line bg-white px-6 py-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">

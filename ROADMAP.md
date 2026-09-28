@@ -107,6 +107,17 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
 - [ ] Asignación a revisor y comentarios; notificaciones reales.
 - [ ] Nómina completa (hoy solo parseo ligero).
 
+## Preparación para lanzamiento (items relevantes para un SaaS privado)
+
+- [x] Páginas de error 404 (`app/not-found.tsx`) y 500 (`app/global-error.tsx`).
+- [x] `robots.txt` que prohíbe indexar el panel (app privada tras login).
+- [x] Páginas legales (borradores, marco Ley 1581 CO): `/legal/privacidad` y `/legal/terminos`,
+      enlazadas desde el login. PENDIENTE: revisión por abogado antes de publicar.
+- [x] Accesibilidad: `role="dialog"`/`aria-modal` en los diálogos; `aria-label` en íconos.
+- [ ] No aplican a este producto (son de web de marketing): SEO/meta/sitemap, banner de
+      cookies y píxeles de analítica. La seguridad (secrets en `.env`, ORM, XXE, validación
+      Pydantic) y el responsive ya estaban cubiertos.
+
 ## Fase F — Conexion con el mundo real (requiere credenciales / datos)  [ ]
 
 Se hace al final: convierte "probado con fakes" en "funciona de verdad".

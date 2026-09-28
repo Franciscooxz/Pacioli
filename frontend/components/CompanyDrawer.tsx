@@ -129,7 +129,12 @@ export default function CompanyDrawer({ id, onClose, onSaved, onAuthError }: Pro
   return (
     <div className="fixed inset-0 z-30 flex justify-end">
       <div className="absolute inset-0 bg-ink/30" onClick={onClose} aria-hidden="true" />
-      <aside className="relative flex h-full w-full max-w-xl flex-col bg-canvas shadow-2xl">
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Formulario de empresa"
+        className="relative flex h-full w-full max-w-xl flex-col bg-canvas shadow-2xl"
+      >
         <header className="flex items-center justify-between border-b border-line bg-white px-6 py-4">
           <div className="text-lg font-extrabold text-ink">
             {id === null ? "Nueva empresa" : "Editar empresa"}

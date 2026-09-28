@@ -1,0 +1,3 @@
+# Contaflow es una aplicacion privada tras login: no debe indexarse.
+User-agent: *
+Disallow: /

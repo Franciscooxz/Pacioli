@@ -78,6 +78,18 @@ export default function LoginPage() {
             {busy ? "Verificando…" : "Entrar"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-xs text-ink-muted">
+          Al entrar aceptas los{" "}
+          <a href="/legal/terminos" className="font-semibold text-primary hover:underline">
+            términos
+          </a>{" "}
+          y la{" "}
+          <a href="/legal/privacidad" className="font-semibold text-primary hover:underline">
+            política de privacidad
+          </a>
+          .
+        </p>
       </div>
     </div>
   );

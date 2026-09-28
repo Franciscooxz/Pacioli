@@ -109,7 +109,12 @@ export default function Sidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden="true" />
-          <aside className="relative flex h-full w-64 flex-col border-r border-line bg-white px-4 py-6">
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de navegación"
+            className="relative flex h-full w-64 flex-col border-r border-line bg-white px-4 py-6"
+          >
             <div className="mb-8 flex items-center justify-between px-2">
               <Logo />
               <button
