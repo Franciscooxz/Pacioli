@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,41 +11,28 @@ import {
   LayoutDashboard,
   LogOut,
   ScrollText,
+  Users,
   X,
 } from "lucide-react";
-import { clearToken } from "@/lib/api";
+import { clearToken, getMe } from "@/lib/api";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, ready: true },
-  { href: "/documents", label: "Documentos", icon: FileText, ready: true },
-  { href: "/reports", label: "Reportes", icon: BarChart3, ready: true },
-  { href: "/rules", label: "Reglas", icon: ScrollText, ready: true },
-  { href: "/companies", label: "Empresas", icon: Building2, ready: true },
-  { href: "/failures", label: "Fallidos", icon: AlertTriangle, ready: true },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/documents", label: "Documentos", icon: FileText, adminOnly: false },
+  { href: "/reports", label: "Reportes", icon: BarChart3, adminOnly: false },
+  { href: "/rules", label: "Reglas", icon: ScrollText, adminOnly: false },
+  { href: "/companies", label: "Empresas", icon: Building2, adminOnly: false },
+  { href: "/failures", label: "Fallidos", icon: AlertTriangle, adminOnly: false },
+  { href: "/users", label: "Usuarios", icon: Users, adminOnly: true },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   return (
     <>
       <nav className="flex flex-1 flex-col gap-1">
-        {NAV.map(({ href, label, icon: Icon, ready }) => {
-          if (!ready) {
-            return (
-              <span
-                key={href}
-                title="Proximamente"
-                className="flex cursor-not-allowed items-center gap-3 rounded-card px-3 py-2.5 text-sm font-semibold text-ink-faint"
-              >
-                <Icon size={20} />
-                {label}
-                <span className="ml-auto rounded-full bg-line px-2 py-0.5 text-[10px] font-bold text-ink-muted">
-                  pronto
-                </span>
-              </span>
-            );
-          }
+        {NAV.filter((n) => !n.adminOnly || isAdmin).map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -95,6 +83,16 @@ export default function Sidebar({
   mobileOpen?: boolean;
   onClose?: () => void;
 }) {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    getMe()
+      .then((m) => setIsAdmin(m.role === "ADMIN"))
+      .catch(() => {
+        /* el layout ya protege por token */
+      });
+  }, []);
+
   return (
     <>
       {/* Escritorio: sidebar fijo. */}
@@ -102,7 +100,7 @@ export default function Sidebar({
         <div className="mb-8 px-2">
           <Logo />
         </div>
-        <NavLinks />
+        <NavLinks isAdmin={isAdmin} />
       </aside>
 
       {/* Movil: cajon deslizante sobre un velo. */}
@@ -126,7 +124,7 @@ export default function Sidebar({
                 <X size={20} />
               </button>
             </div>
-            <NavLinks onNavigate={onClose} />
+            <NavLinks onNavigate={onClose} isAdmin={isAdmin} />
           </aside>
         </div>
       )}

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from contaflow.api.deps import get_current_user
+from contaflow.api.deps import get_current_user, require_admin
 from contaflow.db import get_async_session
 from contaflow.models.company import Company
 from contaflow.models.user import User
@@ -81,7 +81,7 @@ async def get_company(
 @router.post("", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
 async def create_company(
     body: CompanyCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     session: AsyncSession = Depends(get_async_session),
 ) -> CompanyOut:
     company = Company(tenant_id=current_user.tenant_id, **body.model_dump())
@@ -99,7 +99,7 @@ async def create_company(
 async def update_company(
     company_id: uuid.UUID,
     body: CompanyUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     session: AsyncSession = Depends(get_async_session),
 ) -> CompanyOut:
     company = await _owned(session, current_user, company_id)

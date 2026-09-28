@@ -1,4 +1,5 @@
 import type {
+  AppUser,
   Company,
   CompanyDetail,
   CompanyInput,
@@ -9,6 +10,7 @@ import type {
   IngestionFailure,
   Me,
   ReportSummary,
+  Role,
   Rule,
 } from "./types";
 
@@ -78,6 +80,21 @@ export async function login(email: string, password: string): Promise<void> {
 
 export function getMe(): Promise<Me> {
   return authed<Me>("/auth/me");
+}
+
+export function listUsers(): Promise<AppUser[]> {
+  return authed<AppUser[]>("/users");
+}
+
+export function createUser(body: { email: string; password: string; role: Role }): Promise<AppUser> {
+  return authed<AppUser>("/users", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function updateUser(
+  id: string,
+  body: { role?: Role; active?: boolean },
+): Promise<AppUser> {
+  return authed<AppUser>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 }
 
 export function listDocuments(

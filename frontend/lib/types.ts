@@ -1,8 +1,17 @@
+export type Role = "ADMIN" | "MEMBER";
+
 export interface Me {
   id: string;
   email: string;
   role: string;
   tenant_id: string;
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  role: Role;
+  active: boolean;
 }
 
 export type DocStatus =

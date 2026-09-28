@@ -19,6 +19,7 @@ from contaflow.config import get_settings
 from contaflow.core.auth import TokenError, decode_token
 from contaflow.db import async_engine, get_async_session
 from contaflow.ingestion.storage import get_minio_client
+from contaflow.models.enums import UserRole
 from contaflow.models.user import User
 
 _bearer = HTTPBearer(auto_error=False)
@@ -48,6 +49,15 @@ async def get_current_user(
     if user is None or not user.active:
         raise invalid
     return user
+
+
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Como get_current_user pero exige rol ADMIN (gestion de usuarios/empresas)."""
+    if current_user.role is not UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Requiere rol de administrador"
+        )
+    return current_user
 
 
 async def check_postgres() -> bool:

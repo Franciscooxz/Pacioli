@@ -96,7 +96,10 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
       cuentas de posting). Backend: GET /companies/{id}, POST y PATCH (nunca devuelven
       contraseñas). Verificado: mypy, 6 tests, y en vivo (crear con credenciales). ESTO
       HABILITA cargar los accesos reales para el punta a punta (Odoo/IMAP).
-- [ ] Gestión de usuarios/roles/invitaciones (hoy 1 usuario = 1 firma).
+- [x] Gestión de usuarios/roles: página `/users` (solo admin) — crear usuario, cambiar rol
+      (ADMIN/MEMBER), activar/desactivar; guard `require_admin` en el backend (usuarios +
+      crear/editar empresas); "Usuarios" en el nav solo para admins; tests de roles. El invite
+      por correo es Fase F (necesita SMTP); hoy el admin crea el usuario con contraseña.
 - [x] Reportería y exportación: pantalla /reports con filtros (empresa/fecha/estado),
       totales (base, IVA, retenciones, total), desglose por mes y export CSV. Backend
       GET /reports/summary y /reports/export.csv (con tests de agregación y aislamiento).
