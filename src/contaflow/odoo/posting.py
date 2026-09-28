@@ -53,6 +53,7 @@ from contaflow.models.enums import (
     TaxCategory,
 )
 from contaflow.models.posting import Posting
+from contaflow.models.rule import ClassificationRule
 from contaflow.models.source_document import SourceDocument
 from contaflow.odoo.client import OdooClient
 
@@ -132,8 +133,13 @@ def build_move_lines(
     taxes: Iterable[DocumentTax],
     accounts: PostingAccounts,
     rate: Decimal = Decimal("1"),
+    extra_withholdings: list[tuple[TaxCategory, Decimal]] | None = None,
 ) -> list[MoveLine]:
-    """Arma las lineas del asiento de una compra. `rate` es la TRM (1 si ya es COP)."""
+    """Arma las lineas del asiento de una compra. `rate` es la TRM (1 si ya es COP).
+
+    `extra_withholdings` son retenciones que practica el COMPRADOR (no venian en el XML),
+    ya en COP: se agregan como credito y reducen la CxP.
+    """
     lines: list[MoveLine] = [
         MoveLine(base_account_code, "Base gravable", to_money(subtotal * rate), Decimal("0"))
     ]
@@ -148,6 +154,14 @@ def build_move_lines(
             if not accounts.iva:
                 raise PostingError("Sin cuenta IVA configurada (iva_account_code)")
             lines.append(MoveLine(accounts.iva, tax.tax_name, amount, Decimal("0")))
+
+    for category, amount in extra_withholdings or []:
+        code = accounts.withholding_account(category)
+        if not code:
+            raise PostingError(f"Sin cuenta configurada para {category.value}")
+        lines.append(
+            MoveLine(code, f"Retencion {category.value} (comprador)", Decimal("0"), amount)
+        )
 
     if not accounts.payable:
         raise PostingError("Sin cuenta CxP configurada (payable_account_code)")
@@ -275,6 +289,20 @@ def _record_posting(session: Session, doc: SourceDocument, odoo_move_id: int) ->
     session.add(_event(doc, DocumentEventType.POSTED, {"odoo_move_id": odoo_move_id}))
 
 
+def _buyer_retentions(
+    rule: ClassificationRule, base_cop: Decimal, iva_cop: Decimal
+) -> list[tuple[TaxCategory, Decimal]]:
+    """Retenciones que practica el COMPRADOR segun las tasas (%) de la regla (montos en COP)."""
+    out: list[tuple[TaxCategory, Decimal]] = []
+    if rule.retefuente_rate:
+        out.append((TaxCategory.RETEFUENTE, to_money(base_cop * rule.retefuente_rate / 100)))
+    if rule.reteica_rate:
+        out.append((TaxCategory.RETEICA, to_money(base_cop * rule.reteica_rate / 100)))
+    if rule.reteiva_rate:
+        out.append((TaxCategory.RETEIVA, to_money(iva_cop * rule.reteiva_rate / 100)))
+    return out
+
+
 def _plan_move(
     session: Session,
     client: OdooClient,
@@ -301,7 +329,17 @@ def _plan_move(
     rate = _resolve_trm(doc, trm_provider)
 
     if side is PostingSide.PURCHASE:
-        lines = build_move_lines(subtotal, proposed, taxes, accounts, rate)
+        # Retenciones del comprador: solo si el XML no trae retencion y hay regla con tasas.
+        extra: list[tuple[TaxCategory, Decimal]] = []
+        if not any(t.is_withholding for t in taxes) and doc.classification_rule_id is not None:
+            rule = session.get(ClassificationRule, doc.classification_rule_id)
+            if rule is not None:
+                base_cop = to_money(subtotal * rate)
+                iva_cop = to_money(
+                    sum((t.tax_amount for t in taxes if not t.is_withholding), Decimal("0")) * rate
+                )
+                extra = _buyer_retentions(rule, base_cop, iva_cop)
+        lines = build_move_lines(subtotal, proposed, taxes, accounts, rate, extra)
         journal_id = client.find_purchase_journal_id()
         if journal_id is None:
             raise PostingError("Odoo no tiene un diario de compras")

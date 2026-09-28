@@ -85,7 +85,9 @@ Reemplaza el "terminal financiero" anterior.
 ## Backlog funcional (para uso real de una firma; discutido 2026-09-24)
 
 Huecos de funcionalidad (no integraciones) para que sirva día a día:
-- [ ] Motor de retenciones del comprador (retefuente/reteICA que NO vienen en el XML).
+- [x] Motor de retenciones del comprador: tasas por regla de clasificación (retefuente/
+      reteICA/reteIVA %); al postear una compra clasificada por regla sin retención en el
+      XML, se calculan y suman al asiento (reducen la CxP). Migración + posting + form + tests.
 - [x] Reversos/correcciones de asientos: `reverse_document` crea el asiento inverso, enlaza
       el original (`reversed_by`) y deja el doc en CLASSIFIED (re-posteable, con `is_reversal`
       para no chocar con la idempotencia). Endpoint `POST /documents/{id}/reverse`, tarea

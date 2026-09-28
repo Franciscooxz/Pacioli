@@ -15,6 +15,7 @@ from contaflow.models.document_event import DocumentEvent
 from contaflow.models.document_tax import DocumentTax
 from contaflow.models.enums import DocType, DocumentEventType, DocumentStatus, TaxCategory
 from contaflow.models.posting import Posting
+from contaflow.models.rule import ClassificationRule
 from contaflow.models.source_document import SourceDocument
 from contaflow.models.tenant import Tenant
 from contaflow.odoo.posting import post_document, reverse_document
@@ -459,6 +460,74 @@ def test_reversar_crea_asiento_inverso(pg_engine: Engine) -> None:
         original = next(p for p in postings if not p.is_reversal)
         reversal = next(p for p in postings if p.is_reversal)
         assert original.reversed_by == reversal.id
+
+
+def test_post_compra_con_retencion_del_comprador(pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        tenant = Tenant(name="Firma Ret")
+        session.add(tenant)
+        session.flush()
+        company = Company(
+            tenant_id=tenant.id, name="Empresa", nit="800987654", posting_config=POSTING_CONFIG
+        )
+        session.add(company)
+        session.flush()
+        rule = ClassificationRule(
+            tenant_id=tenant.id,
+            company_id=company.id,
+            account_code="511595",
+            priority=100,
+            confidence=Decimal("0.95"),
+            retefuente_rate=Decimal("2.5"),
+        )
+        session.add(rule)
+        session.flush()
+        doc = SourceDocument(
+            tenant_id=tenant.id,
+            company_id=company.id,
+            status=DocumentStatus.CLASSIFIED,
+            raw_xml_uri="mem://x",
+            raw_sha256=uuid.uuid4().hex + uuid.uuid4().hex,
+            cufe=f"CUFE-{uuid.uuid4().hex}",
+            doc_type=DocType.FACTURA_COMPRA,
+            issuer_nit="900555111",
+            issuer_name="Proveedor SAS",
+            subtotal=Decimal("1000000.00"),
+            total_tax=Decimal("190000.00"),
+            total_withholding=Decimal("0.00"),
+            total=Decimal("1190000.00"),
+            proposed_account_code="511595",
+            classification_rule_id=rule.id,
+        )
+        session.add(doc)
+        session.flush()
+        # Solo IVA en el XML (sin retencion): la retencion la calcula el comprador.
+        session.add(
+            DocumentTax(
+                tenant_id=tenant.id,
+                document_id=doc.id,
+                category=TaxCategory.IVA,
+                is_withholding=False,
+                tax_name="IVA",
+                percent=Decimal("19.00"),
+                taxable_amount=Decimal("1000000.00"),
+                tax_amount=Decimal("190000.00"),
+            )
+        )
+        session.commit()
+        doc_id = doc.id
+
+        odoo = FakeOdoo(KNOWN_ACCOUNTS)
+        assert post_document(session, odoo, doc_id) is DocumentStatus.POSTED
+
+        move = next(iter(odoo.moves.values()))
+        # Retefuente (236540 -> 3) = 1.000.000 * 2.5% = 25.000, al credito.
+        retefuente = _line_by_account(move, 3)
+        assert retefuente["credit"] == 25000.00
+        # CxP (220505 -> 5) = base + IVA - retencion = 1.165.000.
+        cxp = _line_by_account(move, 5)
+        assert cxp["credit"] == 1165000.00
+        _assert_move_balanced(move)
 
 
 def test_repost_despues_de_reversar(pg_engine: Engine) -> None:

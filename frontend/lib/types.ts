@@ -109,6 +109,9 @@ export interface Rule {
   priority: number;
   confidence: string;
   active: boolean;
+  retefuente_rate: string | null;
+  reteica_rate: string | null;
+  reteiva_rate: string | null;
 }
 
 export interface DocEvent {

@@ -172,6 +172,9 @@ export interface RuleInput {
   match_pattern?: string | null;
   priority?: number;
   confidence?: string;
+  retefuente_rate?: string | null;
+  reteica_rate?: string | null;
+  reteiva_rate?: string | null;
 }
 
 export function createRule(body: RuleInput): Promise<Rule> {

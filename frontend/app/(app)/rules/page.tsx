@@ -18,6 +18,9 @@ export default function RulesPage() {
   const [issuerNit, setIssuerNit] = useState("");
   const [account, setAccount] = useState("");
   const [priority, setPriority] = useState("100");
+  const [retefuente, setRetefuente] = useState("");
+  const [reteica, setReteica] = useState("");
+  const [reteiva, setReteiva] = useState("");
 
   const onAuthError = useCallback(
     (e: unknown) => {
@@ -68,9 +71,15 @@ export default function RulesPage() {
           account_code: account.trim(),
           issuer_nit: issuerNit.trim() || null,
           priority: Number(priority) || 100,
+          retefuente_rate: retefuente.trim() || null,
+          reteica_rate: reteica.trim() || null,
+          reteiva_rate: reteiva.trim() || null,
         });
         setAccount("");
         setIssuerNit("");
+        setRetefuente("");
+        setReteica("");
+        setReteiva("");
         await load();
       } catch (e) {
         if (!onAuthError(e)) setErr(e instanceof Error ? e.message : "Error al crear la regla");
@@ -78,7 +87,7 @@ export default function RulesPage() {
         setBusy(false);
       }
     },
-    [formCompanyId, account, issuerNit, priority, load, onAuthError],
+    [formCompanyId, account, issuerNit, priority, retefuente, reteica, reteiva, load, onAuthError],
   );
 
   const toggle = useCallback(
@@ -148,6 +157,39 @@ export default function RulesPage() {
             </button>
           </div>
         </div>
+
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-semibold text-ink-muted">
+            Retenciones del comprador (%, opcional — para compras sin retención en el XML)
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Labeled label="Retefuente %">
+              <input
+                value={retefuente}
+                onChange={(e) => setRetefuente(e.target.value)}
+                placeholder="2.5"
+                className="h-10 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-primary"
+              />
+            </Labeled>
+            <Labeled label="ReteICA %">
+              <input
+                value={reteica}
+                onChange={(e) => setReteica(e.target.value)}
+                placeholder="0.966"
+                className="h-10 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-primary"
+              />
+            </Labeled>
+            <Labeled label="ReteIVA %">
+              <input
+                value={reteiva}
+                onChange={(e) => setReteiva(e.target.value)}
+                placeholder="15"
+                className="h-10 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-primary"
+              />
+            </Labeled>
+          </div>
+        </div>
+
         {err && <div className="mt-3 text-sm font-medium text-danger">{err}</div>}
       </form>
 

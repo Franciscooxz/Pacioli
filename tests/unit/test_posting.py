@@ -131,3 +131,20 @@ def test_posting_side_nota_por_nit() -> None:
 def test_posting_side_nota_indeterminada() -> None:
     with pytest.raises(PostingError):
         posting_side(DocType.NOTA_DEBITO, "700000000", "900555111", "800111222")
+
+
+def test_compra_con_retencion_del_comprador() -> None:
+    # Factura de compra con solo IVA (sin retencion en el XML) + retencion del comprador.
+    taxes = [_tax(TaxCategory.IVA, "190000.00", withholding=False)]
+    extra = [(TaxCategory.RETEFUENTE, Decimal("25000.00"))]
+    lines = build_move_lines(Decimal("1000000.00"), "511595", taxes, ACCOUNTS, Decimal("1"), extra)
+
+    debit = sum((line.debit for line in lines), Decimal("0"))
+    credit = sum((line.credit for line in lines), Decimal("0"))
+    assert debit == credit
+
+    retefuente = next(line for line in lines if line.account_code == "236540")
+    assert retefuente.credit == Decimal("25000.00")
+    payable = next(line for line in lines if line.account_code == "220505")
+    # base + IVA - retencion = 1.000.000 + 190.000 - 25.000
+    assert payable.credit == Decimal("1165000.00")

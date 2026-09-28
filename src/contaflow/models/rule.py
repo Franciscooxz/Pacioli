@@ -63,3 +63,10 @@ class ClassificationRule(UUIDPkMixin, TimestampMixin, Base):
     # confidence 0..1; NUMERIC (no float) para que el valor sea exacto y comparable.
     confidence: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Tasas de retencion del COMPRADOR (porcentaje) para compras sin retencion en el XML.
+    # Se aplican al contabilizar una compra clasificada por esta regla. NULL = no aplica.
+    # retefuente/reteica sobre la base gravable; reteiva sobre el IVA.
+    retefuente_rate: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    reteica_rate: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)
+    reteiva_rate: Mapped[Decimal | None] = mapped_column(Numeric(6, 3), nullable=True)

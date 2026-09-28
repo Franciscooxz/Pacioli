@@ -43,6 +43,9 @@ async def create_rule(
         cost_center=body.cost_center,
         priority=body.priority,
         confidence=body.confidence,
+        retefuente_rate=body.retefuente_rate,
+        reteica_rate=body.reteica_rate,
+        reteiva_rate=body.reteiva_rate,
     )
     session.add(rule)
     await session.commit()
