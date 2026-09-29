@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from cryptography.fernet import Fernet
 
-from contaflow.api.routers.metrics import _token_ok
-from contaflow.config import get_settings
-from contaflow.core import security
+from draxia.api.routers.metrics import _token_ok
+from draxia.config import get_settings
+from draxia.core import security
 
 
 def test_token_metrics_compara_de_forma_segura() -> None:

@@ -9,17 +9,17 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from contaflow.classification.llm_classifier import (
+from draxia.classification.llm_classifier import (
     Suggestion,
     SuggestionContext,
     suggest_for_document,
 )
-from contaflow.models.company import Company
-from contaflow.models.document_event import DocumentEvent
-from contaflow.models.document_line import DocumentLine
-from contaflow.models.enums import DocType, DocumentStatus
-from contaflow.models.source_document import SourceDocument
-from contaflow.models.tenant import Tenant
+from draxia.models.company import Company
+from draxia.models.document_event import DocumentEvent
+from draxia.models.document_line import DocumentLine
+from draxia.models.enums import DocType, DocumentStatus
+from draxia.models.source_document import SourceDocument
+from draxia.models.tenant import Tenant
 
 
 class FakeSuggester:

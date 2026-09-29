@@ -11,7 +11,7 @@ from cryptography.x509.oid import NameOID
 from lxml import etree
 from signxml import XMLSigner
 
-from contaflow.ingestion.signature import verify_xades
+from draxia.ingestion.signature import verify_xades
 
 
 def _cert_and_key(cn: str = "Proveedor Test SAS") -> tuple[bytes, bytes]:

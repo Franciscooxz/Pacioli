@@ -12,13 +12,13 @@ from pathlib import Path
 
 import pytest
 
-from contaflow.core.exceptions import (
+from draxia.core.exceptions import (
     MalformedUblError,
     MissingCufeError,
     UnsupportedDocumentTypeError,
 )
-from contaflow.ingestion.ubl_parser import parse_ubl
-from contaflow.models.enums import DocType, TaxCategory
+from draxia.ingestion.ubl_parser import parse_ubl
+from draxia.models.enums import DocType, TaxCategory
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "xml"
 

@@ -17,7 +17,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from contaflow.db import Base, get_async_session
+from draxia.db import Base, get_async_session
 
 try:  # testcontainers >= 4.9 movio los modulos a .community
     from testcontainers.community.postgres import PostgresContainer
@@ -59,7 +59,7 @@ def _clean_tables(pg_engine: Engine) -> Iterator[None]:
 @pytest_asyncio.fixture
 async def api_client(pg_engine: Engine) -> AsyncIterator[httpx.AsyncClient]:
     """Cliente HTTP async contra la app, con la sesion apuntada a la base efimera."""
-    from contaflow.api.main import app
+    from draxia.api.main import app
 
     async_url = pg_engine.url.set(drivername="postgresql+asyncpg")
     engine = create_async_engine(async_url)

@@ -1,6 +1,6 @@
 # ROADMAP — camino al 100%
 
-Plan por fases para completar `contaflow`. Criterio de orden: **todo lo que se puede
+Plan por fases para completar `draxia`. Criterio de orden: **todo lo que se puede
 construir y probar con dobles (fakes), certificados de prueba y XML sinteticos va
 primero**; todo lo que necesita credenciales, APIs externas o facturas reales se agrupa
 al final, en la Fase F. Asi el codigo llega al 100% sin depender de accesos externos.

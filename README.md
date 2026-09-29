@@ -1,4 +1,4 @@
-# contaflow
+# draxia
 
 Capa de automatizacion contable sobre **Odoo** para firmas contables colombianas.
 Captura la factura electronica (XML UBL 2.1 de la DIAN), la guarda, la parsea y —en
@@ -70,7 +70,7 @@ Sin configurar un buzon IMAP, puedes ejercitar el pipeline real (MinIO + base + 
 contra una empresa demo con el cargador incluido:
 
 ```bash
-docker compose run --rm api python -m contaflow.scripts.cargar_factura tests/fixtures/xml/factura_simple.xml
+docker compose run --rm api python -m draxia.scripts.cargar_factura tests/fixtures/xml/factura_simple.xml
 ```
 
 Imprime el `id`, el estado resultante (`PARSED`), el CUFE, el NIT del emisor y el total.
@@ -134,7 +134,7 @@ Tambien hay atajos en el [Makefile](Makefile): `make up`, `make down`, `make tes
 ## Operacion y seguridad
 
 - **Autenticacion:** la API usa JWT (access + refresh); las contrasenas se guardan con
-  argon2. Crea usuarios con `python -m contaflow.scripts.crear_usuario`.
+  argon2. Crea usuarios con `python -m draxia.scripts.crear_usuario`.
 - **Multi-tenant:** cada endpoint filtra por el tenant del usuario; hay un test de
   aislamiento que lo verifica.
 - **Secretos cifrados en reposo:** credenciales de Odoo/IMAP con Fernet.
@@ -146,7 +146,7 @@ Tambien hay atajos en el [Makefile](Makefile): `make up`, `make down`, `make tes
   activa solo si defines `SENTRY_DSN`.
 - **IMAP:** conexion `IMAP4_SSL` con verificacion de certificado y hostname.
 - **Backups (produccion):** respaldar el volumen de PostgreSQL (`pg_dump` o snapshot del
-  volumen `contaflow_pgdata`) y el bucket de MinIO (`mc mirror`). No automatizado aun.
+  volumen `draxia_pgdata`) y el bucket de MinIO (`mc mirror`). No automatizado aun.
 - **CI/CD:** fuera de alcance por ahora segun `CLAUDE.md`; correr los tests localmente.
 
 ---
@@ -172,6 +172,6 @@ Fragilidades y alcance diferido (detalle en [PENDIENTES.md](PENDIENTES.md)):
 
 ## Aviso legal
 
-La informacion procesada por contaflow **no reemplaza asesoria contable profesional**.
+La informacion procesada por draxia **no reemplaza asesoria contable profesional**.
 La responsabilidad profesional es del contador publico.
 ```

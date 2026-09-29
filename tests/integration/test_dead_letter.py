@@ -19,14 +19,14 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from contaflow.core.dead_letter import record_failure, resolve_document_context
-from contaflow.ingestion.imap_reader import MAX_ZIP_ENTRIES
-from contaflow.ingestion.pipeline import process_mailbox
-from contaflow.models.company import Company
-from contaflow.models.enums import DocumentStatus, FailureStage
-from contaflow.models.ingestion_failure import IngestionFailure
-from contaflow.models.source_document import SourceDocument
-from contaflow.models.tenant import Tenant
+from draxia.core.dead_letter import record_failure, resolve_document_context
+from draxia.ingestion.imap_reader import MAX_ZIP_ENTRIES
+from draxia.ingestion.pipeline import process_mailbox
+from draxia.models.company import Company
+from draxia.models.enums import DocumentStatus, FailureStage
+from draxia.models.ingestion_failure import IngestionFailure
+from draxia.models.source_document import SourceDocument
+from draxia.models.tenant import Tenant
 
 
 class FakeStorage:
@@ -151,7 +151,7 @@ def test_record_failure_por_documento(pg_engine: Engine) -> None:
             tenant_id=tenant_id,
             company_id=company_id,
             document_id=doc.id,
-            task_name="contaflow.workers.tasks.parse_document",
+            task_name="draxia.workers.tasks.parse_document",
             source_ref="task-123",
         )
 

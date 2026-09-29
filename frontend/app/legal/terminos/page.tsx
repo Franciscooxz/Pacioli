@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Términos y condiciones — Contaflow",
+  title: "Términos y condiciones — Draxia",
 };
 
 export default function TerminosPage() {
@@ -21,7 +21,7 @@ export default function TerminosPage() {
           <section>
             <h2 className="text-base font-bold">1. Objeto</h2>
             <p className="mt-1 text-ink-muted">
-              Contaflow es una plataforma de automatización contable que captura documentos
+              Draxia es una plataforma de automatización contable que captura documentos
               electrónicos, los clasifica y propone/registra asientos en el sistema contable de la
               firma. El servicio se presta &quot;tal cual&quot;, sujeto a estos términos.
             </p>
@@ -47,7 +47,7 @@ export default function TerminosPage() {
           <section>
             <h2 className="text-base font-bold">4. Naturaleza contable del servicio</h2>
             <p className="mt-1 text-ink-muted">
-              La información procesada por Contaflow <strong>no reemplaza la asesoría contable
+              La información procesada por Draxia <strong>no reemplaza la asesoría contable
               profesional</strong>. La responsabilidad profesional sobre los registros contables y
               tributarios recae en el contador público a cargo. El usuario debe revisar y aprobar
               los asientos antes de contabilizarlos.

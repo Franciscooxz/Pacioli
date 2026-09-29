@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from contaflow.api.deps import check_minio, check_postgres, check_redis
-from contaflow.api.main import app
+from draxia.api.deps import check_minio, check_postgres, check_redis
+from draxia.api.main import app
 
 
 def test_health_ok_cuando_todo_arriba() -> None:

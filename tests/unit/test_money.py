@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from contaflow.core.money import to_money
+from draxia.core.money import to_money
 
 
 def test_to_money_agrega_dos_decimales() -> None:

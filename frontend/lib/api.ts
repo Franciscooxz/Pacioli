@@ -15,7 +15,7 @@ import type {
 } from "./types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const TOKEN_KEY = "contaflow_token";
+const TOKEN_KEY = "draxia_token";
 
 export function getToken(): string | null {
   try {

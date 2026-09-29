@@ -71,7 +71,7 @@ function NavLinks({ onNavigate, isAdmin }: { onNavigate?: () => void; isAdmin: b
 function Logo() {
   return (
     <span className="text-xl font-extrabold text-ink">
-      Conta<span className="text-primary">flow</span>
+      Drax<span className="text-primary">ia</span>
     </span>
   );
 }

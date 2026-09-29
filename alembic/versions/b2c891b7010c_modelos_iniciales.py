@@ -200,7 +200,7 @@ def upgrade() -> None:
     # Rechaza UPDATE y DELETE a nivel de base: la bitacora es evidencia inmutable.
     op.execute(
         """
-        CREATE FUNCTION contaflow_document_event_no_mutations()
+        CREATE FUNCTION draxia_document_event_no_mutations()
         RETURNS trigger AS $$
         BEGIN
             RAISE EXCEPTION 'document_event es append-only: % no permitido', TG_OP;
@@ -212,7 +212,7 @@ def upgrade() -> None:
         """
         CREATE TRIGGER trg_document_event_no_update_delete
         BEFORE UPDATE OR DELETE ON document_event
-        FOR EACH ROW EXECUTE FUNCTION contaflow_document_event_no_mutations();
+        FOR EACH ROW EXECUTE FUNCTION draxia_document_event_no_mutations();
         """
     )
 
@@ -240,7 +240,7 @@ def downgrade() -> None:
     op.drop_table("posting")
 
     op.execute("DROP TRIGGER IF EXISTS trg_document_event_no_update_delete ON document_event")
-    op.execute("DROP FUNCTION IF EXISTS contaflow_document_event_no_mutations()")
+    op.execute("DROP FUNCTION IF EXISTS draxia_document_event_no_mutations()")
     op.drop_index("ix_document_event_document_created", table_name="document_event")
     op.drop_table("document_event")
 

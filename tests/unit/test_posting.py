@@ -6,10 +6,10 @@ from decimal import Decimal
 
 import pytest
 
-from contaflow.core.exceptions import PostingError
-from contaflow.models.document_tax import DocumentTax
-from contaflow.models.enums import DocType, TaxCategory
-from contaflow.odoo.posting import (
+from draxia.core.exceptions import PostingError
+from draxia.models.document_tax import DocumentTax
+from draxia.models.enums import DocType, TaxCategory
+from draxia.odoo.posting import (
     PostingAccounts,
     PostingSide,
     build_move_lines,

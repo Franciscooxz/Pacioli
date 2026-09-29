@@ -8,12 +8,12 @@ import httpx
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from contaflow.core.auth import hash_password
-from contaflow.models.company import Company
-from contaflow.models.enums import FailureStage, UserRole
-from contaflow.models.ingestion_failure import IngestionFailure
-from contaflow.models.tenant import Tenant
-from contaflow.models.user import User
+from draxia.core.auth import hash_password
+from draxia.models.company import Company
+from draxia.models.enums import FailureStage, UserRole
+from draxia.models.ingestion_failure import IngestionFailure
+from draxia.models.tenant import Tenant
+from draxia.models.user import User
 
 PASSWORD = "secreto-123"
 

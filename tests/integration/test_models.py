@@ -19,13 +19,13 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
 
-from contaflow.models import (
+from draxia.models import (
     Company,
     DocumentEvent,
     SourceDocument,
     Tenant,
 )
-from contaflow.models.enums import ActorType, DocType, DocumentEventType, DocumentStatus
+from draxia.models.enums import ActorType, DocType, DocumentEventType, DocumentStatus
 
 
 def _seed_tenant_company(session: Session) -> tuple[Tenant, Company]:
@@ -53,7 +53,7 @@ def _new_document(tenant: Tenant, company: Company, cufe: str, total: str) -> So
         issuer_nit="800197268",
         issue_date=date(2026, 1, 15),
         total=Decimal(total),
-        raw_xml_uri="minio://contaflow-raw/x.xml",
+        raw_xml_uri="minio://draxia-raw/x.xml",
         raw_sha256=(uuid.uuid4().hex + uuid.uuid4().hex),  # 64 chars, unico por doc
         status=DocumentStatus.RECEIVED,
     )

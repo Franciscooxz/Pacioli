@@ -9,7 +9,7 @@ const sans = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Contaflow",
+  title: "Draxia",
   description: "Automatizacion contable para firmas colombianas",
 };
 

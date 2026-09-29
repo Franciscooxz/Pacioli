@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Política de privacidad — Contaflow",
+  title: "Política de privacidad — Draxia",
 };
 
 export default function PrivacidadPage() {
@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
             <h2 className="text-base font-bold">1. Responsable</h2>
             <p className="mt-1 text-ink-muted">
               [Razón social de la firma], NIT [___], con domicilio en [___], correo
-              [privacidad@tu-dominio.co]. Contaflow es la plataforma que la firma usa para
+              [privacidad@tu-dominio.co]. Draxia es la plataforma que la firma usa para
               automatizar su contabilidad.
             </p>
           </section>

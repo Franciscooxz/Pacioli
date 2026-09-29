@@ -13,9 +13,9 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 # Importar los modelos registra sus tablas en Base.metadata (para el autogenerate).
-import contaflow.models  # noqa: E402,F401
-from contaflow.config import get_settings
-from contaflow.db import Base
+import draxia.models  # noqa: E402,F401
+from draxia.config import get_settings
+from draxia.db import Base
 
 config = context.config
 

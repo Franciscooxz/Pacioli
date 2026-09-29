@@ -5,7 +5,7 @@ diferido a proposito.
 
 ## Validacion de la firma digital XAdES-EPES (Entrega 3)
 
-**Qué falta:** el parser (`src/contaflow/ingestion/ubl_parser.py`) extrae los datos del
+**Qué falta:** el parser (`src/draxia/ingestion/ubl_parser.py`) extrae los datos del
 XML pero **no verifica la firma digital XAdES-EPES** que la DIAN exige en la factura
 electronica.
 
@@ -22,7 +22,7 @@ firmadas. Es un modulo en si mismo (probablemente con `signxml` o `xmlsec`) y no
 mezclarse con la extraccion de datos.
 
 **Cómo abordarlo cuando toque:**
-- Modulo aparte, p. ej. `src/contaflow/ingestion/signature.py`, con
+- Modulo aparte, p. ej. `src/draxia/ingestion/signature.py`, con
   `verify_xades(xml_bytes) -> SignatureResult`.
 - Evaluar `xmlsec` (bindings de libxmlsec1) o `signxml`. Verificar que soporten
   XAdES-EPES, no solo XML-DSig basico.

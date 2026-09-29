@@ -8,9 +8,9 @@ from email.message import EmailMessage
 
 import pytest
 
-from contaflow.core.exceptions import AttachmentTooLargeError, ZipBombError
-from contaflow.ingestion import imap_reader
-from contaflow.ingestion.imap_reader import extract_xml_attachments
+from draxia.core.exceptions import AttachmentTooLargeError, ZipBombError
+from draxia.ingestion import imap_reader
+from draxia.ingestion.imap_reader import extract_xml_attachments
 
 XML = b'<?xml version="1.0"?><Invoice>ejemplo</Invoice>'
 

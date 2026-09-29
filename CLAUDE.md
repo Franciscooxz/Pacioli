@@ -7,7 +7,7 @@
 
 ## 1. Qué estamos construyendo
 
-**Nombre provisional:** `contaflow` (cámbialo si tienes uno mejor)
+**Nombre provisional:** `draxia` (cámbialo si tienes uno mejor)
 
 Una plataforma SaaS de **automatización contable para firmas contables colombianas**.
 
@@ -115,7 +115,7 @@ Si una instrucción mía las contradice, **detente y avísame** antes de escribi
 ## 5. Estructura del repositorio
 
 ```
-contaflow/
+draxia/
 ├── CLAUDE.md
 ├── docker-compose.yml
 ├── pyproject.toml
@@ -123,7 +123,7 @@ contaflow/
 ├── alembic/
 │   └── versions/
 ├── src/
-│   └── contaflow/
+│   └── draxia/
 │       ├── __init__.py
 │       ├── config.py              # Pydantic Settings
 │       ├── db.py                  # engine, sessionmaker

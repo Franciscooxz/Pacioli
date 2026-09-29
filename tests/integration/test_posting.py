@@ -10,15 +10,15 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from contaflow.models.company import Company
-from contaflow.models.document_event import DocumentEvent
-from contaflow.models.document_tax import DocumentTax
-from contaflow.models.enums import DocType, DocumentEventType, DocumentStatus, TaxCategory
-from contaflow.models.posting import Posting
-from contaflow.models.rule import ClassificationRule
-from contaflow.models.source_document import SourceDocument
-from contaflow.models.tenant import Tenant
-from contaflow.odoo.posting import post_document, reverse_document
+from draxia.models.company import Company
+from draxia.models.document_event import DocumentEvent
+from draxia.models.document_tax import DocumentTax
+from draxia.models.enums import DocType, DocumentEventType, DocumentStatus, TaxCategory
+from draxia.models.posting import Posting
+from draxia.models.rule import ClassificationRule
+from draxia.models.source_document import SourceDocument
+from draxia.models.tenant import Tenant
+from draxia.odoo.posting import post_document, reverse_document
 
 POSTING_CONFIG = {
     "payable_account_code": "220505",

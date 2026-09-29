@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from contaflow.classification.llm_classifier import _parse_suggestion
+from draxia.classification.llm_classifier import _parse_suggestion
 
 
 def test_parse_json_valido() -> None:

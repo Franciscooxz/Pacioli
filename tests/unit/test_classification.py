@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from contaflow.classification.rule_engine import _rule_matches, select_rule
-from contaflow.models.rule import ClassificationRule
+from draxia.classification.rule_engine import _rule_matches, select_rule
+from draxia.models.rule import ClassificationRule
 
 
 def _rule(**kwargs: object) -> ClassificationRule:

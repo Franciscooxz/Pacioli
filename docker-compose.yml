@@ -46,7 +46,7 @@ services:
 
   api:
     build: .
-    command: uvicorn contaflow.api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn draxia.api.main:app --host 0.0.0.0 --port 8000 --reload
     env_file: .env
     ports:
       - "8000:8000"
@@ -62,7 +62,7 @@ services:
 
   worker:
     build: .
-    command: celery -A contaflow.workers.celery_app worker --loglevel=info
+    command: celery -A draxia.workers.celery_app worker --loglevel=info
     env_file: .env
     volumes:
       - ./src:/app/src
@@ -73,7 +73,7 @@ services:
 
   beat:                           # Celery Beat: dispara las tareas periodicas (poll IMAP)
     build: .
-    command: celery -A contaflow.workers.celery_app beat --loglevel=info
+    command: celery -A draxia.workers.celery_app beat --loglevel=info
     env_file: .env
     volumes:
       - ./src:/app/src

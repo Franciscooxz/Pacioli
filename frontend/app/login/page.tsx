@@ -29,7 +29,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-card">
         <div className="mb-6 text-center">
           <div className="text-2xl font-extrabold text-ink">
-            Conta<span className="text-primary">flow</span>
+            Drax<span className="text-primary">ia</span>
           </div>
           <p className="mt-1 text-sm text-ink-muted">Ingresa a tu cuenta</p>
         </div>

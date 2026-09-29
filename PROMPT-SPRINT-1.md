@@ -30,9 +30,9 @@ Necesito:
   - `api` (FastAPI con hot reload)
   - `worker` (Celery)
   - `odoo` + `odoo-db` (Postgres separado — **no compartir base con la nuestra**)
-- `src/contaflow/config.py` con Pydantic Settings leyendo de variables de entorno,
+- `src/draxia/config.py` con Pydantic Settings leyendo de variables de entorno,
   y `.env.example` documentado.
-- `src/contaflow/db.py` con engine async de SQLAlchemy 2.0 y sessionmaker.
+- `src/draxia/db.py` con engine async de SQLAlchemy 2.0 y sessionmaker.
 - Alembic inicializado y apuntando a nuestra base.
 - Un endpoint `GET /health` que verifique conectividad real con Postgres, Redis y MinIO
   y devuelva el estado de cada uno.
@@ -74,7 +74,7 @@ Incluye tests con `testcontainers` que verifiquen:
 
 Este es el módulo más delicado del sprint. **Escribe los tests primero.**
 
-`src/contaflow/ingestion/ubl_parser.py` debe exponer:
+`src/draxia/ingestion/ubl_parser.py` debe exponer:
 
 ```python
 def parse_ubl(xml_bytes: bytes) -> ParsedDocument: ...
@@ -110,7 +110,7 @@ No implementes la validación de la firma digital XAdES todavía — déjalo ano
 
 ## Entrega 4 — Lector IMAP y pipeline de ingesta
 
-`src/contaflow/ingestion/imap_reader.py` + la tarea de Celery que lo orquesta.
+`src/draxia/ingestion/imap_reader.py` + la tarea de Celery que lo orquesta.
 
 Flujo completo:
 

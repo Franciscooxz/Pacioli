@@ -7,19 +7,19 @@ import logging
 
 from fastapi.testclient import TestClient
 
-from contaflow.api.deps import check_minio, check_postgres, check_redis
-from contaflow.api.main import app
-from contaflow.core.logging import JsonFormatter, request_id_ctx
+from draxia.api.deps import check_minio, check_postgres, check_redis
+from draxia.api.main import app
+from draxia.core.logging import JsonFormatter, request_id_ctx
 
 
 def test_json_formatter_campos_basicos() -> None:
     formatter = JsonFormatter()
     record = logging.LogRecord(
-        "contaflow.test", logging.INFO, __file__, 10, "hola %s", ("mundo",), None
+        "draxia.test", logging.INFO, __file__, 10, "hola %s", ("mundo",), None
     )
     data = json.loads(formatter.format(record))
     assert data["level"] == "INFO"
-    assert data["logger"] == "contaflow.test"
+    assert data["logger"] == "draxia.test"
     assert data["msg"] == "hola mundo"
     assert "ts" in data
 

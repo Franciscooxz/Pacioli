@@ -11,7 +11,7 @@ import {
 import { listCompanies } from "@/lib/api";
 import type { Company } from "@/lib/types";
 
-const KEY = "contaflow_company";
+const KEY = "draxia_company";
 
 interface CompanyCtx {
   companies: Company[];
