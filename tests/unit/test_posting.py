@@ -13,6 +13,7 @@ from contaflow.odoo.posting import (
     PostingAccounts,
     PostingSide,
     build_move_lines,
+    build_payroll_move_lines,
     build_sale_move_lines,
     posting_side,
     reverse_lines,
@@ -148,3 +149,21 @@ def test_compra_con_retencion_del_comprador() -> None:
     payable = next(line for line in lines if line.account_code == "220505")
     # base + IVA - retencion = 1.000.000 + 190.000 - 25.000
     assert payable.credit == Decimal("1165000.00")
+
+
+def test_asiento_nomina_balanceado() -> None:
+    accounts = PostingAccounts(
+        nomina_expense="510506", nomina_deductions="237005", nomina_payable="250501"
+    )
+    lines = build_payroll_move_lines(
+        Decimal("3000000.00"), Decimal("240000.00"), Decimal("2760000.00"), accounts
+    )
+
+    debit = sum((line.debit for line in lines), Decimal("0"))
+    credit = sum((line.credit for line in lines), Decimal("0"))
+    assert debit == credit
+
+    gasto = next(line for line in lines if line.account_code == "510506")
+    assert gasto.debit == Decimal("3000000.00")
+    neto = next(line for line in lines if line.account_code == "250501")
+    assert neto.credit == Decimal("2760000.00")

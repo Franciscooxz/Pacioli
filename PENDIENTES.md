@@ -85,13 +85,14 @@ verificado contra un Odoo real. Falta (necesita tu entorno):
 
 ## Nomina y moneda extranjera (Fase C)
 
-- `NOMINA_ELECTRONICA`: **parseo ligero implementado** (raiz `NominaIndividual`: CUNE,
-  empleador, trabajador, totales devengados/deducciones/comprobante). Se ingesta como
-  evidencia pero NO se contabiliza (CLAUDE.md §8 excluye el modulo de nomina). Falta
-  VERIFICAR las rutas/atributos del esquema DIAN contra una nomina real (hoy el fixture
-  `nomina_simple.xml` es sintetico): `InformacionGeneral@CUNE/@FechaGen/@TipoMoneda`,
-  `Empleador@NIT`, `NumeroSecuenciaXML@Numero` y si los totales son elemento o atributo.
-  `NominaIndividualDeAjuste` se enruta igual pero no se ha probado.
+- `NOMINA_ELECTRONICA`: **parseo ligero + contabilizacion implementados**. Se parsea la raiz
+  `NominaIndividual` (CUNE, empleador, trabajador, totales) y se CONTABILIZA desde esos totales
+  (build_payroll_move_lines: Debito gasto = Credito deducciones + neto; cuentas nomina_* en
+  posting_config, diario general). NO se liquida la nomina (eso seria el modulo de nomina del
+  §8, fuera de alcance). Falta VERIFICAR las rutas/atributos del esquema DIAN contra una nomina
+  real (hoy el fixture `nomina_simple.xml` es sintetico): `InformacionGeneral@CUNE/@FechaGen/
+  @TipoMoneda`, `Empleador@NIT`, `NumeroSecuenciaXML@Numero` y si los totales son elemento o
+  atributo. `NominaIndividualDeAjuste` se enruta igual pero no se ha probado.
 
 - Moneda extranjera / TRM: **implementado** con la TRM del XML (`cac:PaymentExchangeRate`)
   y conversion a COP al contabilizar. Falta la **fuente oficial de TRM** (Fase F) para los

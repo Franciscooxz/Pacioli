@@ -64,6 +64,9 @@ class FakeOdoo:
     def find_sale_journal_id(self) -> int | None:
         return 12
 
+    def find_general_journal_id(self) -> int | None:
+        return 13
+
     def create_move(self, move: dict[str, Any]) -> int:
         move_id = self._next
         self._next += 1
@@ -460,6 +463,54 @@ def test_reversar_crea_asiento_inverso(pg_engine: Engine) -> None:
         original = next(p for p in postings if not p.is_reversal)
         reversal = next(p for p in postings if p.is_reversal)
         assert original.reversed_by == reversal.id
+
+
+def test_post_nomina(pg_engine: Engine) -> None:
+    with Session(pg_engine) as session:
+        tenant = Tenant(name="Firma Nom")
+        session.add(tenant)
+        session.flush()
+        company = Company(
+            tenant_id=tenant.id,
+            name="Empresa",
+            nit="900777888",
+            posting_config={
+                "nomina_expense_account_code": "510506",
+                "nomina_deductions_account_code": "237005",
+                "nomina_payable_account_code": "250501",
+            },
+        )
+        session.add(company)
+        session.flush()
+        doc = SourceDocument(
+            tenant_id=tenant.id,
+            company_id=company.id,
+            status=DocumentStatus.CLASSIFIED,
+            raw_xml_uri="mem://x",
+            raw_sha256=uuid.uuid4().hex + uuid.uuid4().hex,
+            cufe=f"CUNE-{uuid.uuid4().hex}",
+            doc_type=DocType.NOMINA_ELECTRONICA,
+            issuer_nit="900777888",
+            receiver_nit="1098765432",
+            subtotal=Decimal("3000000.00"),
+            total_tax=Decimal("0.00"),
+            total_withholding=Decimal("240000.00"),
+            total=Decimal("2760000.00"),
+        )
+        session.add(doc)
+        session.commit()
+        doc_id = doc.id
+
+        odoo = FakeOdoo({"510506": 30, "237005": 31, "250501": 32})
+        assert post_document(session, odoo, doc_id) is DocumentStatus.POSTED
+
+        move = next(iter(odoo.moves.values()))
+        assert move["journal_id"] == 13  # diario general
+        gasto = _line_by_account(move, 30)
+        assert gasto["debit"] == 3000000.00
+        neto = _line_by_account(move, 32)
+        assert neto["credit"] == 2760000.00
+        _assert_move_balanced(move)
 
 
 def test_post_compra_con_retencion_del_comprador(pg_engine: Engine) -> None:

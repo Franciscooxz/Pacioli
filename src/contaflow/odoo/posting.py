@@ -83,6 +83,10 @@ class PostingAccounts:
     retefuente_favor: str | None = None
     reteiva_favor: str | None = None
     reteica_favor: str | None = None
+    # Nomina electronica.
+    nomina_expense: str | None = None
+    nomina_deductions: str | None = None
+    nomina_payable: str | None = None
 
     @classmethod
     def from_config(cls, config: dict[str, Any] | None) -> PostingAccounts:
@@ -100,6 +104,9 @@ class PostingAccounts:
             retefuente_favor=cfg.get("retefuente_favor_account_code"),
             reteiva_favor=cfg.get("reteiva_favor_account_code"),
             reteica_favor=cfg.get("reteica_favor_account_code"),
+            nomina_expense=cfg.get("nomina_expense_account_code"),
+            nomina_deductions=cfg.get("nomina_deductions_account_code"),
+            nomina_payable=cfg.get("nomina_payable_account_code"),
         )
 
     def withholding_account(self, category: TaxCategory) -> str | None:
@@ -214,6 +221,30 @@ def build_sale_move_lines(
     return lines
 
 
+def build_payroll_move_lines(
+    devengados: Decimal, deducciones: Decimal, neto: Decimal, accounts: PostingAccounts
+) -> list[MoveLine]:
+    """Asiento de una nomina ya liquidada (los totales vienen del XML DIAN).
+
+    Debito gasto (devengados) = Credito deducciones por pagar + Credito neto a pagar.
+    """
+    if not accounts.nomina_expense:
+        raise PostingError("Sin cuenta de gasto de nomina (nomina_expense_account_code)")
+    if not accounts.nomina_payable:
+        raise PostingError("Sin cuenta de neto a pagar (nomina_payable_account_code)")
+    lines = [
+        MoveLine(accounts.nomina_expense, "Devengados nomina", to_money(devengados), Decimal("0"))
+    ]
+    ded = to_money(deducciones)
+    if ded > 0:
+        if not accounts.nomina_deductions:
+            raise PostingError("Sin cuenta de deducciones (nomina_deductions_account_code)")
+        lines.append(MoveLine(accounts.nomina_deductions, "Deducciones nomina", Decimal("0"), ded))
+    lines.append(MoveLine(accounts.nomina_payable, "Neto a pagar", Decimal("0"), to_money(neto)))
+    _assert_balanced(lines)
+    return lines
+
+
 def reverse_lines(lines: list[MoveLine]) -> list[MoveLine]:
     """Invierte debito<->credito de cada linea (una nota credito reversa su asiento)."""
     return [MoveLine(line.account_code, line.name, line.credit, line.debit) for line in lines]
@@ -315,6 +346,22 @@ def _plan_move(
     Devuelve (lineas, journal_id, nit_contraparte, nombre_contraparte). Lo usan tanto la
     contabilizacion como el reverso (que luego invierte las lineas).
     """
+    # Nomina: se contabiliza desde los totales que ya trae el XML (no se liquida aqui).
+    if doc.doc_type is DocType.NOMINA_ELECTRONICA:
+        if doc.subtotal is None or doc.total is None:
+            raise PostingError("Nomina sin totales")
+        accounts = PostingAccounts.from_config(company.posting_config)
+        lines = build_payroll_move_lines(
+            doc.subtotal, doc.total_withholding or Decimal("0"), doc.total, accounts
+        )
+        journal_id = client.find_general_journal_id()
+        if journal_id is None:
+            raise PostingError("Odoo no tiene un diario general")
+        worker = doc.receiver_nit or doc.issuer_nit or ""
+        if not worker:
+            raise PostingError("Nomina sin documento del trabajador")
+        return lines, journal_id, worker, worker
+
     subtotal = doc.subtotal
     proposed = doc.proposed_account_code
     if not proposed or subtotal is None:

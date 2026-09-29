@@ -108,7 +108,10 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
 - [x] Acciones masivas: selección múltiple en la lista de documentos + aprobar/rechazar
       en lote (`POST /documents/bulk/approve` y `/bulk/reject`, con tests).
 - [ ] Asignación a revisor y comentarios; notificaciones reales.
-- [ ] Nómina completa (hoy solo parseo ligero).
+- [x] Nómina: contabilización del documento soporte desde los totales del XML (no se
+      liquida — eso sería el módulo de nómina del §8). Asiento: Débito gasto (devengados) =
+      Crédito deducciones + Crédito neto a pagar; cuentas en `posting_config` (nomina_*),
+      diario general. `build_payroll_move_lines` + rama en `_plan_move` + tests.
 
 ## Preparación para lanzamiento (items relevantes para un SaaS privado)
 

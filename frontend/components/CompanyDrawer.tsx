@@ -23,6 +23,9 @@ const POSTING_FIELDS: { key: string; label: string }[] = [
   { key: "retefuente_favor_account_code", label: "Retefuente a favor" },
   { key: "reteiva_favor_account_code", label: "ReteIVA a favor" },
   { key: "reteica_favor_account_code", label: "ReteICA a favor" },
+  { key: "nomina_expense_account_code", label: "Nómina: gasto (devengados)" },
+  { key: "nomina_deductions_account_code", label: "Nómina: deducciones x pagar" },
+  { key: "nomina_payable_account_code", label: "Nómina: neto a pagar" },
 ];
 
 const EMPTY = {
