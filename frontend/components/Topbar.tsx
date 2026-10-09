@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Building2, Menu } from "lucide-react";
+import { Building2, Menu } from "lucide-react";
 import { getMe } from "@/lib/api";
 import type { Me } from "@/lib/types";
 import { useCompany } from "@/components/CompanyProvider";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Topbar({ onMenu }: { onMenu?: () => void }) {
   const [me, setMe] = useState<Me | null>(null);
@@ -50,14 +51,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void }) {
       </div>
 
       <div className="ml-auto flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="relative grid h-10 w-10 place-items-center rounded-full transition hover:bg-canvas"
-        >
-          <Bell size={20} className="text-ink-muted" />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-danger" />
-        </button>
+        <NotificationBell />
 
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-bold text-white">

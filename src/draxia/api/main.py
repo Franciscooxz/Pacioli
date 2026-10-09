@@ -14,6 +14,7 @@ from draxia.api.routers import (
     failures,
     health,
     metrics,
+    notifications,
     reports,
     rules,
     users,
@@ -50,6 +51,7 @@ app.include_router(companies.router)
 app.include_router(failures.router)
 app.include_router(reports.router)
 app.include_router(users.router)
+app.include_router(notifications.router)
 app.include_router(metrics.router)
 
 # Recolecta metricas HTTP; el endpoint /metrics (protegido) lo sirve metrics.router.

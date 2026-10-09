@@ -156,6 +156,12 @@ export interface ReportSummary {
   by_month: MonthBucket[];
 }
 
+export interface NotificationSummary {
+  pending_review: number;
+  assigned_to_me: number;
+  failures: number;
+}
+
 export interface IngestionFailure {
   id: string;
   stage: string;

@@ -10,6 +10,7 @@ import type {
   DocumentSummary,
   IngestionFailure,
   Me,
+  NotificationSummary,
   ReportSummary,
   Role,
   Rule,
@@ -204,6 +205,13 @@ export async function uploadDocument(companyId: string, file: File): Promise<voi
     const detail = await res.json().catch(() => ({}));
     throw new Error(detail.detail ?? `Error ${res.status}`);
   }
+}
+
+export function getNotificationSummary(
+  companyId?: string | null,
+): Promise<NotificationSummary> {
+  const q = companyId ? `?company_id=${companyId}` : "";
+  return authed<NotificationSummary>(`/notifications/summary${q}`);
 }
 
 export function listCompanies(): Promise<Company[]> {
