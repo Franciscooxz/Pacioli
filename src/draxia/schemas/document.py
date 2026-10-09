@@ -7,7 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from draxia.models.enums import (
     ActorType,
@@ -33,6 +33,7 @@ class DocumentOut(BaseModel):
     received_at: datetime
     proposed_account_code: str | None
     classification_confidence: Decimal | None
+    assigned_user_id: uuid.UUID | None = None
 
 
 class LineOut(BaseModel):
@@ -99,3 +100,20 @@ class BulkRequest(BaseModel):
 class BulkResult(BaseModel):
     processed: int
     skipped: int
+
+
+class AssignRequest(BaseModel):
+    # None desasigna el documento.
+    user_id: uuid.UUID | None = None
+
+
+class CommentIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class CommentOut(BaseModel):
+    id: uuid.UUID
+    author_id: uuid.UUID | None
+    author_email: str | None
+    body: str
+    created_at: datetime

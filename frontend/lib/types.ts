@@ -37,6 +37,7 @@ export interface DocumentSummary {
   received_at: string;
   proposed_account_code: string | null;
   classification_confidence: string | null;
+  assigned_user_id: string | null;
 }
 
 export interface LineOut {
@@ -121,6 +122,14 @@ export interface Rule {
   retefuente_rate: string | null;
   reteica_rate: string | null;
   reteiva_rate: string | null;
+}
+
+export interface Comment {
+  id: string;
+  author_id: string | null;
+  author_email: string | null;
+  body: string;
+  created_at: string;
 }
 
 export interface DocEvent {

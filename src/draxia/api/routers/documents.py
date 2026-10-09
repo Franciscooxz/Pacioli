@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from draxia.api.deps import get_current_user
 from draxia.db import get_async_session
 from draxia.models.company import Company
+from draxia.models.document_comment import DocumentComment
 from draxia.models.document_event import DocumentEvent
 from draxia.models.document_line import DocumentLine
 from draxia.models.document_tax import DocumentTax
@@ -25,8 +26,11 @@ from draxia.models.source_document import SourceDocument
 from draxia.models.user import User
 from draxia.schemas.document import (
     ApproveRequest,
+    AssignRequest,
     BulkRequest,
     BulkResult,
+    CommentIn,
+    CommentOut,
     DocumentDetailOut,
     DocumentOut,
     EventOut,
@@ -221,6 +225,80 @@ async def list_document_events(
         .order_by(DocumentEvent.created_at)
     )
     return list(events)
+
+
+@router.post("/{document_id}/assign", response_model=DocumentOut)
+async def assign_document(
+    document_id: uuid.UUID,
+    body: AssignRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> SourceDocument:
+    """Asigna (o desasigna, con user_id=null) un revisor del mismo tenant al documento."""
+    doc = await _get_owned_document(session, current_user, document_id)
+    if body.user_id is not None:
+        assignee = await session.get(User, body.user_id)
+        if assignee is None or assignee.tenant_id != current_user.tenant_id or not assignee.active:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no valido para asignar"
+            )
+    doc.assigned_user_id = body.user_id
+    await session.commit()
+    await session.refresh(doc)
+    return doc
+
+
+@router.get("/{document_id}/comments", response_model=list[CommentOut])
+async def list_comments(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> list[CommentOut]:
+    doc = await _get_owned_document(session, current_user, document_id)
+    rows = await session.execute(
+        select(DocumentComment, User.email)
+        .outerjoin(User, User.id == DocumentComment.author_id)
+        .where(DocumentComment.document_id == doc.id)
+        .order_by(DocumentComment.created_at)
+    )
+    return [
+        CommentOut(
+            id=c.id,
+            author_id=c.author_id,
+            author_email=email,
+            body=c.body,
+            created_at=c.created_at,
+        )
+        for c, email in rows.all()
+    ]
+
+
+@router.post(
+    "/{document_id}/comments", response_model=CommentOut, status_code=status.HTTP_201_CREATED
+)
+async def add_comment(
+    document_id: uuid.UUID,
+    body: CommentIn,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> CommentOut:
+    doc = await _get_owned_document(session, current_user, document_id)
+    comment = DocumentComment(
+        tenant_id=doc.tenant_id,
+        document_id=doc.id,
+        author_id=current_user.id,
+        body=body.body,
+    )
+    session.add(comment)
+    await session.commit()
+    await session.refresh(comment)
+    return CommentOut(
+        id=comment.id,
+        author_id=current_user.id,
+        author_email=current_user.email,
+        body=comment.body,
+        created_at=comment.created_at,
+    )
 
 
 @router.post("/{document_id}/approve", response_model=DocumentOut)

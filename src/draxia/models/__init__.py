@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from draxia.models.company import Company
+from draxia.models.document_comment import DocumentComment
 from draxia.models.document_event import DocumentEvent
 from draxia.models.document_line import DocumentLine
 from draxia.models.document_tax import DocumentTax
@@ -18,6 +19,7 @@ from draxia.models.user import User
 __all__ = [
     "Company",
     "ClassificationRule",
+    "DocumentComment",
     "DocumentEvent",
     "DocumentLine",
     "DocumentTax",

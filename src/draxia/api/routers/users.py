@@ -9,13 +9,27 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from draxia.api.deps import require_admin
+from draxia.api.deps import get_current_user, require_admin
 from draxia.core.auth import hash_password
 from draxia.db import get_async_session
 from draxia.models.user import User
 from draxia.schemas.user import UserCreate, UserOut, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/assignable", response_model=list[UserOut])
+async def list_assignable_users(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> list[User]:
+    """Usuarios activos del tenant, para el selector de revisor. No requiere ser admin."""
+    result = await session.scalars(
+        select(User)
+        .where(User.tenant_id == current_user.tenant_id, User.active.is_(True))
+        .order_by(User.email)
+    )
+    return list(result)
 
 
 @router.get("", response_model=list[UserOut])

@@ -1,5 +1,6 @@
 import type {
   AppUser,
+  Comment,
   Company,
   CompanyDetail,
   CompanyInput,
@@ -86,6 +87,10 @@ export function listUsers(): Promise<AppUser[]> {
   return authed<AppUser[]>("/users");
 }
 
+export function listAssignableUsers(): Promise<AppUser[]> {
+  return authed<AppUser[]>("/users/assignable");
+}
+
 export function createUser(body: { email: string; password: string; role: Role }): Promise<AppUser> {
   return authed<AppUser>("/users", { method: "POST", body: JSON.stringify(body) });
 }
@@ -114,6 +119,24 @@ export function getDocument(id: string): Promise<DocumentDetail> {
 
 export function getDocumentEvents(id: string): Promise<DocEvent[]> {
   return authed<DocEvent[]>(`/documents/${id}/events`);
+}
+
+export function assignDocument(id: string, userId: string | null): Promise<DocumentSummary> {
+  return authed<DocumentSummary>(`/documents/${id}/assign`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export function listComments(id: string): Promise<Comment[]> {
+  return authed<Comment[]>(`/documents/${id}/comments`);
+}
+
+export function addComment(id: string, body: string): Promise<Comment> {
+  return authed<Comment>(`/documents/${id}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
 }
 
 export function approveDocument(

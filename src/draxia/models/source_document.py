@@ -97,6 +97,14 @@ class SourceDocument(UUIDPkMixin, TimestampMixin, Base):
         nullable=True,
     )
 
+    # Revisor asignado (flujo de revision humana). NULL = sin asignar. SET NULL si el
+    # usuario se borra para no perder el documento.
+    assigned_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("app_user.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # Evidencia y trazabilidad: siempre presentes desde RECEIVED.
     raw_xml_uri: Mapped[str] = mapped_column(String(1000), nullable=False)
     # SHA-256 del XML crudo tal como llego; clave de idempotencia pre-parseo.

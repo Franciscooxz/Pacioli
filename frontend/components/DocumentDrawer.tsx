@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { Ban, Check, RotateCcw, Send, X } from "lucide-react";
 import {
+  addComment,
   approveDocument,
+  assignDocument,
   getDocument,
   getDocumentEvents,
+  listAssignableUsers,
+  listComments,
   postDocument,
   rejectDocument,
   reverseDocument,
 } from "@/lib/api";
 import { money, pct } from "@/lib/format";
-import type { DocEvent, DocumentDetail } from "@/lib/types";
+import type { AppUser, Comment, DocEvent, DocumentDetail } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 
 const EVENT_LABEL: Record<string, string> = {
@@ -48,12 +52,19 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
   const [createRule, setCreateRule] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [assignees, setAssignees] = useState<AppUser[]>([]);
+  const [assignedId, setAssignedId] = useState<string>("");
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setD(null);
     setErr("");
     setEvents([]);
+    setComments([]);
+    setNewComment("");
     getDocumentEvents(id)
       .then((e) => {
         if (alive) setEvents(e);
@@ -61,11 +72,26 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
       .catch(() => {
         /* el historial es secundario; no bloquea el panel */
       });
+    listAssignableUsers()
+      .then((u) => {
+        if (alive) setAssignees(u);
+      })
+      .catch(() => {
+        /* el selector de revisor es secundario */
+      });
+    listComments(id)
+      .then((c) => {
+        if (alive) setComments(c);
+      })
+      .catch(() => {
+        /* los comentarios son secundarios */
+      });
     getDocument(id)
       .then((doc) => {
         if (!alive) return;
         setD(doc);
         setAccount(doc.proposed_account_code ?? "");
+        setAssignedId(doc.assigned_user_id ?? "");
       })
       .catch((e) => {
         if (!onAuthError(e) && alive) setErr("No se pudo cargar el documento");
@@ -74,6 +100,36 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
       alive = false;
     };
   }, [id, onAuthError]);
+
+  const onAssign = useCallback(
+    async (userId: string) => {
+      const prev = assignedId;
+      setAssignedId(userId);
+      try {
+        await assignDocument(id, userId || null);
+        onChanged();
+      } catch (e) {
+        setAssignedId(prev);
+        if (!onAuthError(e)) setErr("No se pudo asignar el revisor");
+      }
+    },
+    [id, assignedId, onChanged, onAuthError],
+  );
+
+  const onComment = useCallback(async () => {
+    const body = newComment.trim();
+    if (!body) return;
+    setCommentBusy(true);
+    try {
+      const created = await addComment(id, body);
+      setComments((cs) => [...cs, created]);
+      setNewComment("");
+    } catch (e) {
+      if (!onAuthError(e)) setErr("No se pudo comentar");
+    } finally {
+      setCommentBusy(false);
+    }
+  }, [id, newComment, onAuthError]);
 
   const act = useCallback(
     async (kind: "approve" | "reject" | "post" | "reverse") => {
@@ -151,6 +207,28 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
                 <StatusBadge status={d.status} />
                 <span className="text-sm text-ink-muted">{d.doc_type ?? "—"}</span>
               </div>
+
+              <section className="rounded-card bg-white p-5 shadow-card">
+                <label
+                  htmlFor="assignee"
+                  className="mb-1.5 block text-sm font-bold text-ink"
+                >
+                  Revisor asignado
+                </label>
+                <select
+                  id="assignee"
+                  value={assignedId}
+                  onChange={(e) => onAssign(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-line bg-canvas px-3 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">(sin asignar)</option>
+                  {assignees.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.email}
+                    </option>
+                  ))}
+                </select>
+              </section>
 
               <section className="rounded-card bg-white p-5 shadow-card">
                 <Field label="Emisor" value={d.issuer_name ?? "—"} />
@@ -260,6 +338,42 @@ export default function DocumentDrawer({ id, onClose, onChanged, onAuthError }: 
                     ))}
                   </ol>
                 )}
+              </section>
+
+              <section className="rounded-card bg-white p-5 shadow-card">
+                <h3 className="mb-3 text-sm font-bold text-ink">Comentarios</h3>
+                {comments.length === 0 ? (
+                  <p className="text-sm text-ink-muted">Sin comentarios</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {comments.map((cm) => (
+                      <li key={cm.id} className="rounded-lg bg-canvas px-3 py-2">
+                        <div className="text-xs text-ink-muted">
+                          {cm.author_email ?? "usuario eliminado"} ·{" "}
+                          {cm.created_at.slice(0, 16).replace("T", " ")}
+                        </div>
+                        <div className="whitespace-pre-wrap text-sm text-ink">{cm.body}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-3 space-y-2">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    rows={2}
+                    placeholder="Escribe un comentario…"
+                    className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    disabled={commentBusy || !newComment.trim()}
+                    onClick={onComment}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-hover disabled:opacity-40"
+                  >
+                    {commentBusy ? "Enviando…" : "Comentar"}
+                  </button>
+                </div>
               </section>
 
               {err && (
