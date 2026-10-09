@@ -161,6 +161,28 @@ export function bulkReject(ids: string[], reason?: string): Promise<BulkResult> 
   });
 }
 
+export async function uploadDocument(companyId: string, file: File): Promise<void> {
+  const token = getToken();
+  if (!token) throw new AuthError("sin sesion");
+  const form = new FormData();
+  form.append("company_id", companyId);
+  form.append("file", file);
+  // Sin Content-Type: el navegador pone el boundary de multipart. Solo el Bearer.
+  const res = await fetch(`${API}/documents/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (res.status === 401) {
+    clearToken();
+    throw new AuthError("sesion expirada");
+  }
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.detail ?? `Error ${res.status}`);
+  }
+}
+
 export function listCompanies(): Promise<Company[]> {
   return authed<Company[]>("/companies");
 }

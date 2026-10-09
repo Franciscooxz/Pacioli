@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, UploadCloud } from "lucide-react";
 import { AuthError, bulkApprove, bulkReject, clearToken, listDocuments } from "@/lib/api";
 import { money, pct } from "@/lib/format";
 import type { DocStatus, DocumentSummary } from "@/lib/types";
 import DocumentDrawer from "@/components/DocumentDrawer";
 import StatusBadge from "@/components/StatusBadge";
+import UploadDocumentModal from "@/components/UploadDocumentModal";
 import { useCompany } from "@/components/CompanyProvider";
 
 type Filter = "review" | "classified" | "all";
@@ -33,7 +34,8 @@ const DOC_CODE: Record<string, string> = {
 
 export default function DocumentsPage() {
   const router = useRouter();
-  const { companyId } = useCompany();
+  const { companyId, companies } = useCompany();
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("review");
   const [docs, setDocs] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,14 +119,24 @@ export default function DocumentsPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-extrabold text-ink">Documentos</h1>
-        <div className="relative w-full max-w-xs">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar NIT / emisor / CUFE"
-            className="h-10 w-full rounded-full border border-line bg-white pl-10 pr-4 text-sm outline-none focus:border-primary"
-          />
+        <div className="flex w-full max-w-lg items-center gap-3">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar NIT / emisor / CUFE"
+              className="h-10 w-full rounded-full border border-line bg-white pl-10 pr-4 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setUploadOpen(true)}
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-soft transition hover:bg-primary-hover"
+          >
+            <UploadCloud size={16} />
+            Subir factura
+          </button>
         </div>
       </div>
 
@@ -249,6 +261,16 @@ export default function DocumentsPage() {
           id={openId}
           onClose={() => setOpenId(null)}
           onChanged={load}
+          onAuthError={onAuthError}
+        />
+      )}
+
+      {uploadOpen && (
+        <UploadDocumentModal
+          companies={companies}
+          defaultCompanyId={companyId}
+          onClose={() => setUploadOpen(false)}
+          onUploaded={load}
           onAuthError={onAuthError}
         />
       )}

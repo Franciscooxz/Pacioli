@@ -7,6 +7,7 @@ los de datos (XML corrupto) NO se reintentan: el pipeline los marca PARSE_FAILED
 
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 
@@ -20,7 +21,11 @@ from draxia.config import get_settings
 from draxia.core.exceptions import OdooConnectionError
 from draxia.db import SyncSessionLocal
 from draxia.ingestion.imap_reader import ImapMailbox
-from draxia.ingestion.pipeline import parse_source_document, process_mailbox
+from draxia.ingestion.pipeline import (
+    ingest_attachment,
+    parse_source_document,
+    process_mailbox,
+)
 from draxia.ingestion.storage import MinioStorage
 from draxia.models.company import Company
 from draxia.models.enums import DocumentStatus
@@ -86,6 +91,39 @@ def ingest_company(company_id: str) -> int:
             mailbox.close()
     logger.info("ingest_company %s: %d documentos nuevos", company_id, len(created))
     return len(created)
+
+
+@celery_app.task(  # type: ignore[untyped-decorator]
+    name="draxia.workers.tasks.ingest_upload",
+    base=DeadLetterTask,
+    autoretry_for=_TRANSIENT,
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=5,
+)
+def ingest_upload(company_id: str, filename: str, xml_b64: str) -> str:
+    """Ingesta un XML subido manualmente desde la UI y encola su parseo.
+
+    El endpoint HTTP solo encola (regla 4.6): el guardado del crudo en MinIO y la
+    creacion del source_document ocurren aqui, en el worker. El XML viaja en base64
+    porque el serializador de Celery es JSON. Devuelve el id del documento creado,
+    "DUPLICATE" si ya se habia ingestado (idempotencia por sha) o "COMPANY_NOT_FOUND".
+    """
+    xml_bytes = base64.b64decode(xml_b64)
+    with SyncSessionLocal() as session:
+        company = session.get(Company, uuid.UUID(company_id))
+        if company is None:
+            logger.warning("ingest_upload: empresa %s no existe", company_id)
+            return "COMPANY_NOT_FOUND"
+        storage = MinioStorage()
+        doc_id = ingest_attachment(
+            session, storage, company, filename, xml_bytes, source_ref="upload"
+        )
+    if doc_id is None:
+        return "DUPLICATE"
+    parse_document.delay(str(doc_id))
+    return str(doc_id)
 
 
 @celery_app.task(  # type: ignore[untyped-decorator]

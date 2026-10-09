@@ -5,15 +5,17 @@ Aislamiento multi-tenant estricto: toda consulta filtra por el tenant del usuari
 
 from __future__ import annotations
 
+import base64
 import uuid
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from draxia.api.deps import get_current_user
 from draxia.db import get_async_session
+from draxia.models.company import Company
 from draxia.models.document_event import DocumentEvent
 from draxia.models.document_line import DocumentLine
 from draxia.models.document_tax import DocumentTax
@@ -37,6 +39,9 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 # Estados sobre los que el humano puede actuar en revision.
 _REVIEWABLE = {DocumentStatus.PENDING_REVIEW, DocumentStatus.CLASSIFIED}
+
+# Tope de tamano para una factura XML subida a mano (una UBL real rara vez pasa de ~1 MB).
+_MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 async def _get_owned_document(
@@ -79,6 +84,46 @@ async def list_documents(
         query.order_by(SourceDocument.received_at.desc()).limit(limit).offset(offset)
     )
     return list(result)
+
+
+@router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
+async def upload_document(
+    company_id: uuid.UUID = Form(...),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+) -> dict[str, str]:
+    """Sube un XML de factura a mano (sin IMAP) y encola su ingesta.
+
+    El request solo valida y encola (regla 4.6): el guardado del crudo y el parseo
+    corren en Celery. La empresa debe pertenecer al tenant del usuario.
+    """
+    company = await session.get(Company, company_id)
+    if company is None or company.tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa no encontrada")
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo esta vacio")
+    if len(raw) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="El archivo supera el tamano maximo (10 MB)",
+        )
+    # Validacion superficial: debe parecer XML. El parseo UBL real corre en el worker.
+    if raw.lstrip()[:1] != b"<":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo no parece un XML"
+        )
+
+    from draxia.workers.tasks import ingest_upload
+
+    ingest_upload.delay(
+        str(company_id),
+        file.filename or "documento.xml",
+        base64.b64encode(raw).decode("ascii"),
+    )
+    return {"status": "queued", "company_id": str(company_id)}
 
 
 @router.post("/bulk/approve", response_model=BulkResult)
