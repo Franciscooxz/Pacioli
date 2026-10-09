@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from draxia.models.enums import UserRole
 
@@ -12,6 +12,11 @@ from draxia.models.enums import UserRole
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
 
 
 class RefreshRequest(BaseModel):

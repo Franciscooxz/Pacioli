@@ -84,6 +84,16 @@ export function getMe(): Promise<Me> {
   return authed<Me>("/auth/me");
 }
 
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  return authed<void>("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
+
 export function listUsers(): Promise<AppUser[]> {
   return authed<AppUser[]>("/users");
 }

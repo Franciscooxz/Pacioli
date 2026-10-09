@@ -107,7 +107,13 @@ Huecos de funcionalidad (no integraciones) para que sirva día a día:
       "Historial" en el panel del documento (con test).
 - [x] Acciones masivas: selección múltiple en la lista de documentos + aprobar/rechazar
       en lote (`POST /documents/bulk/approve` y `/bulk/reject`, con tests).
-- [ ] Asignación a revisor y comentarios; notificaciones reales.
+- [x] Asignación a revisor y comentarios por documento (columna assigned_user_id +
+      tabla document_comment; endpoints assign/comments + GET /users/assignable; UI en el
+      panel del documento). Migración a1b2c3d4e5f6.
+- [x] Notificaciones in-app: GET /notifications/summary (por revisar / asignados a mí /
+      fallos) + campana con contador en el topbar.
+- [x] Subir factura XML desde la UI (POST /documents/upload async + botón y modal).
+- [x] Cambio de contraseña autenticado (POST /auth/change-password + página Mi cuenta).
 - [x] Nómina: contabilización del documento soporte desde los totales del XML (no se
       liquida — eso sería el módulo de nómina del §8). Asiento: Débito gasto (devengados) =
       Crédito deducciones + Crédito neto a pagar; cuentas en `posting_config` (nomina_*),

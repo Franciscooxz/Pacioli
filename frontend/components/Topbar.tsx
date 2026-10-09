@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Building2, Menu } from "lucide-react";
 import { getMe } from "@/lib/api";
 import type { Me } from "@/lib/types";
@@ -53,7 +54,11 @@ export default function Topbar({ onMenu }: { onMenu?: () => void }) {
       <div className="ml-auto flex items-center gap-4">
         <NotificationBell />
 
-        <div className="flex items-center gap-3">
+        <Link
+          href="/account"
+          aria-label="Mi cuenta"
+          className="flex items-center gap-3 rounded-full p-1 transition hover:bg-canvas"
+        >
           <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-bold text-white">
             {initial}
           </div>
@@ -61,7 +66,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void }) {
             <div className="text-sm font-bold text-ink">{name}</div>
             <div className="text-xs text-ink-muted">{me?.role ?? ""}</div>
           </div>
-        </div>
+        </Link>
       </div>
     </header>
   );
